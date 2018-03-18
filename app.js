@@ -45,4 +45,19 @@ app.use(function(err, req, res, next) {
   res.render('error');
 });
 
+// crypto-trader setup
+const cryptoTrader = require('./app/index');
+
+console.log();
+console.log("CRYPTO - TRADER: starting.....");
+console.log();
+
+cryptoTrader.initialize().then(() => {
+    console.log();
+    console.log("CRYPTO - TRADER: running.....");
+    console.log();
+}).catch(function(err){
+    console.error(err);
+});
+
 module.exports = app;
