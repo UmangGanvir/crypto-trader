@@ -1,10 +1,11 @@
+const Pr = require('bluebird');
 const TradingUtils = require('../utils/trading_utils');
 
 class Opportunity {
-    constructor(ticker, orderBook){
+    constructor(ticker, orderBook) {
         this.symbol = ticker.symbol;
         this.price = ticker.last;
-        this.symbolQuoteVolume = ticker.quoteVolume;
+        this.quoteVolume = ticker.quoteVolume;
         this.buySellRatio = TradingUtils.getBuySellRatio(ticker.last, orderBook.bids, orderBook.asks);
     }
 
@@ -25,7 +26,7 @@ class Opportunity {
     }
 
     isGreat() {
-        if (!this.isValid()){
+        if (!this.isValid()) {
             return false;
         }
         return this.ungreatnessReason() === undefined;
@@ -33,8 +34,8 @@ class Opportunity {
 
     ungreatnessReason() {
         // 0 - quote volume
-        if (this.symbolQuoteVolume < 1500) {
-            return "symbolQuoteVolume is less than 1500";
+        if (this.quoteVolume < 1500) {
+            return "quoteVolume is less than 1500";
         }
         if (this.buySellRatio.r100 < 5) {
             return "buySellRatio - r100 is less than 5";

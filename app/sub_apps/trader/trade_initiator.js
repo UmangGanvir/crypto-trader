@@ -1,23 +1,19 @@
 const Pr = require('bluebird');
+const EventEmitter = require('events');
 
 let opportunityEmitter = require('../../modules/opportunity/opportunity_emitter');
+const OpportunityModule = require('../../modules/opportunity');
 
 class TradeInitiator {
-    constructor(){}
+    constructor() {
+    }
 
-    initialize(){
+    initialize(eventName) {
         return new Pr((resolve, reject) => {
-            opportunityEmitter.on('OPPORTUNITY_FOUND', (opportunity) => {
-                // store into db too
-                // TODO
+            opportunityEmitter.on(eventName, (opportunity) => {
+                // TODO initiate trade here!
 
-                if (opportunity.isGreat()) {
-                    console.log("\n----------GREAT---------------");
-                    console.log(opportunity.symbol + ": ", opportunity);
-                    console.log("--------------------------------\n");
-                } else {
-                    console.log(opportunity.symbol + ": ", JSON.stringify(opportunity));
-                }
+                // console.log("TRADE INITIATOR received opportunity as: ", opportunity);
             });
             resolve(new Date().toString());
         });
