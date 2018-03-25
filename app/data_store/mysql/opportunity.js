@@ -16,7 +16,9 @@ exports.initializeModel = (sequelize) => {
         buySellRatio50: {type: Sequelize.DECIMAL(20, 10), allowNull: false},
         buySellRatio20: {type: Sequelize.DECIMAL(20, 10), allowNull: false},
         buySellRatio10: {type: Sequelize.DECIMAL(20, 10), allowNull: false},
-        buySellRatio5: {type: Sequelize.DECIMAL(20, 10), allowNull: false}
+        buySellRatio5: {type: Sequelize.DECIMAL(20, 10), allowNull: false},
+        createdAt: {type: Sequelize.DATE(3), allowNull: false, defaultValue: Sequelize.NOW },
+        updatedAt: {type: Sequelize.DATE(3), allowNull: false, defaultValue: Sequelize.NOW }
     });
 
     Opportunity.save = ({
