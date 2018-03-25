@@ -1,3 +1,8 @@
+let config = require('dotenv').config();
+if (config.error) {
+    throw config.error
+}
+
 var express = require('express');
 var path = require('path');
 var favicon = require('serve-favicon');

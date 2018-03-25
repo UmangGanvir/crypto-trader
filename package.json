@@ -12,6 +12,7 @@
     "cookie-parser": "~1.4.3",
     "debug": "~2.6.9",
     "deep-freeze": "0.0.1",
+    "dotenv": "^5.0.1",
     "express": "~4.15.5",
     "hbs": "~4.0.1",
     "less-middleware": "~2.2.1",

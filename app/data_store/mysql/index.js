@@ -13,7 +13,7 @@ const sequelize = new Sequelize('crypto_trader', 'root', '', {
         idle: 10000
     },
 
-    logging: true,
+    logging: console.log,
 
     // http://docs.sequelizejs.com/manual/tutorial/querying.html#operators
     operatorsAliases: false

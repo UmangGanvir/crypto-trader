@@ -33,24 +33,24 @@ class Opportunity {
     }
 
     ungreatnessReason() {
-        // 0 - quote volume
+        // 0 - should have minimum quote
         if (this.quoteVolume < 1500) {
             return "quoteVolume is less than 1500";
         }
-        if (this.buySellRatio.r100 < 5) {
-            return "buySellRatio - r100 is less than 5";
+        if (this.buySellRatio.r100 < process.env.OPPORTUNITY_GREATNESS_RATIO) {
+            return `buySellRatio - r100 is less than ${process.env.OPPORTUNITY_GREATNESS_RATIO}`;
         }
-        if (this.buySellRatio.r50 < 5) {
-            return "buySellRatio - r50 is less than 5";
+        if (this.buySellRatio.r50 < process.env.OPPORTUNITY_GREATNESS_RATIO) {
+            return `buySellRatio - r50 is less than ${process.env.OPPORTUNITY_GREATNESS_RATIO}`;
         }
-        if (this.buySellRatio.r20 < 5) {
-            return "buySellRatio - r20 is less than 5";
+        if (this.buySellRatio.r20 < process.env.OPPORTUNITY_GREATNESS_RATIO) {
+            return `buySellRatio - r20 is less than ${process.env.OPPORTUNITY_GREATNESS_RATIO}`;
         }
-        if (this.buySellRatio.r10 < 5) {
-            return "buySellRatio - r10 is less than 5";
+        if (this.buySellRatio.r10 < process.env.OPPORTUNITY_GREATNESS_RATIO) {
+            return `buySellRatio - r10 is less than ${process.env.OPPORTUNITY_GREATNESS_RATIO}`;
         }
-        if (this.buySellRatio.r5 < 5) {
-            return "buySellRatio - r5 is less than 5";
+        if (this.buySellRatio.r5 < process.env.OPPORTUNITY_GREATNESS_RATIO) {
+            return `buySellRatio - r5 is less than ${process.env.OPPORTUNITY_GREATNESS_RATIO}`;
         }
         return undefined
     }

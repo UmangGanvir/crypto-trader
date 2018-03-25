@@ -17,7 +17,7 @@ class OpportunityArchiver {
             opportunityEmitter.on($this.eventName, (opportunity) => {
 
                 OpportunityModule.save(opportunity).then((savedOpportunity) => {
-                    // console.log(`${MODULE_NAME}: OpportunityModule - savedOpportunity: `, savedOpportunity);
+                    // console.log(`${MODULE_NAME}: OpportunityModule - savedOpportunity: `, savedOpportunity.id);
                 }).catch((err) => {
                     console.log(`${MODULE_NAME}: OpportunityModule - err saving opportunity: `, err);
                 });
