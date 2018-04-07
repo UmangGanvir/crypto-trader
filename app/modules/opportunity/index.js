@@ -5,7 +5,7 @@ class OpportunityModule {
     }
 
     static save(opportunity) {
-        return OpportunityDataStore.save({
+        return OpportunityDataStore.createNew({
             symbol: opportunity.symbol,
             price: opportunity.price,
             quoteVolume: opportunity.quoteVolume,

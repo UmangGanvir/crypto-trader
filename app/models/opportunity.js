@@ -6,7 +6,14 @@ class Opportunity {
         this.symbol = ticker.symbol;
         this.price = ticker.last;
         this.quoteVolume = ticker.quoteVolume;
-        this.buySellRatio = TradingUtils.getBuySellRatio(ticker.last, orderBook.bids, orderBook.asks);
+        this.buySellRatio = TradingUtils.getBuySellRatio(orderBook.bids, orderBook.asks);
+
+        this._bids = orderBook.bids;
+        this._asks = orderBook.asks;
+    }
+
+    getHighestBid(){
+        return this._bids[0][0];
     }
 
     isValid() {
@@ -53,6 +60,10 @@ class Opportunity {
             return `buySellRatio - r5 is less than ${process.env.OPPORTUNITY_GREATNESS_RATIO}`;
         }
         return undefined
+    }
+
+    static getInvalidOpportunity() {
+        return new Opportunity({}, {bids: []});
     }
 }
 

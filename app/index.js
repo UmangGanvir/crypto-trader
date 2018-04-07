@@ -4,7 +4,10 @@ const ccxt = require('ccxt');
 const CONSTANTS = require('./constants');
 
 const dataStore = require('./data_store');
-let BinanceClient = require('./modules/exchange_clients/binance_client');
+let BinanceClient = new ccxt.binance({
+    apiKey: process.env.BINANCE_API_KEY,
+    secret: process.env.BINANCE_SECRET
+});
 
 // sub apps
 const OpportunityBot = require('./sub_apps/opportunity/opportunity_bot');

@@ -5,6 +5,7 @@ const utils = require('../../utils/index');
 const CONSTANTS = require('../../constants');
 
 let Bot = require('../../modules/bot/index');
+let Trader = require('../../modules/trader');
 let Opportunity = require('../../models/opportunity');
 let opportunityEmitter = require('../../modules/opportunity/opportunity_emitter');
 
@@ -21,53 +22,69 @@ class OpportunityBot extends Bot {
 
     findOpportunityForSymbol(symbol) {
         let $this = this;
-        return utils.delayPromise(
-            $this.exchange.fetchTicker(symbol),
-            (1000 / $this.requestRateLimitPerSecond)
-        ).then((ticker) => {
+        return Trader.areTradesInProgress().then(isTradeInProgress => {
+            if (isTradeInProgress) {
+                return Opportunity.getInvalidOpportunity();
+            }
+
             return utils.delayPromise(
-                $this.exchange.fetchOrderBook(symbol),
+                $this.exchange.fetchTicker(symbol),
                 (1000 / $this.requestRateLimitPerSecond)
-            ).then((orderBook) => {
-                let opportunity = new Opportunity(ticker, orderBook);
-                return Pr.resolve(opportunity);
-            })
+            ).then((ticker) => {
+                return utils.delayPromise(
+                    $this.exchange.fetchOrderBook(symbol),
+                    (1000 / $this.requestRateLimitPerSecond)
+                ).then((orderBook) => {
+                    let opportunity = new Opportunity(ticker, orderBook);
+                    return Pr.resolve(opportunity);
+                })
+            });
         });
     }
 
     emitOpportunities() {
         let $this = this;
         return new Pr((resolve, reject) => {
-            setTimeout(() => {
 
-                $this.exchange.loadMarkets().then((markets) => {
-                    let marketsArr = _.values(markets);
-                    let ethereumMarketsArr = _.filter(marketsArr, (market) => {
-                        return market.quoteId === "ETH";
-                    });
+            Trader.areTradesInProgress().then(isTradeInProgress => {
+                if (isTradeInProgress) {
+                    return resolve([]);
+                }
 
-                    return Pr.reduce(ethereumMarketsArr, (opportunities, ethereumMarket) => {
-                        return $this.findOpportunityForSymbol(ethereumMarket.symbol).then((opportunity) => {
-                            if (opportunity.isValid()) {
-                                // 0 - emit opportunity for trader
-                                opportunityEmitter.emit(CONSTANTS.OPPORTUNITY_FOUND_EVENT_NAME, opportunity);
-                                opportunities.push(opportunity);
-                            }
-                            return opportunities;
+                setTimeout(() => {
+
+                    $this.exchange.loadMarkets().then((markets) => {
+                        let marketsArr = _.values(markets);
+                        let ethereumMarketsArr = _.filter(marketsArr, (market) => {
+                            return market.quoteId === "ETH";
                         });
-                    }, []).then((opportunities) => {
-                        console.log("=============================");
-                        console.log("market's one round complete. opportunities found: " +  opportunities.length + " / " + ethereumMarketsArr.length);
-                        console.log("=============================");
-                        console.log();
-                        resolve(opportunities);
+
+                        return Pr.reduce(ethereumMarketsArr, (opportunities, ethereumMarket) => {
+                            return $this.findOpportunityForSymbol(ethereumMarket.symbol).then((opportunity) => {
+                                if (opportunity.isValid()) {
+                                    // 0 - emit opportunity for trader
+                                    opportunityEmitter.emit(CONSTANTS.OPPORTUNITY_FOUND_EVENT_NAME, opportunity);
+                                    opportunities.push(opportunity);
+                                }
+                                return opportunities;
+                            });
+                        }, []).then((opportunities) => {
+                            console.log("=============================");
+                            console.log("market's one round complete. opportunities found: " +  opportunities.length + " / " + ethereumMarketsArr.length);
+                            console.log("=============================");
+                            console.log();
+                            resolve(opportunities);
+                        });
+
+                    }).catch((err) => {
+                        reject(err);
                     });
 
-                }).catch((err) => {
-                    reject(err);
-                })
+                }, (1000 / $this.requestRateLimitPerSecond));
 
-            }, (1000 / $this.requestRateLimitPerSecond));
+            }).catch((err) => {
+                reject(err);
+            });
         });
     }
 }
