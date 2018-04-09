@@ -3,8 +3,8 @@ const Pr = require('bluebird');
 class Bot {
     constructor(logPrefix, delayInMillis) {
         this.logPrefix = logPrefix;
-        this.taskFunction = undefined;
         this.delayInMillis = delayInMillis;
+        this.taskFunction = undefined;
         this.active = true;
     }
 

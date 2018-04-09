@@ -3,32 +3,30 @@ const Pr = require('bluebird');
 const TraderModuleClass = require('../../modules/trader');
 
 const TradeInitiator = require('./trade_initiator');
-// const TradeWorkFlowBot = require('./trade_workflow_bot');
+const TradeWorkFlowBot = require('./trade_workflow_bot');
 
 class Trader {
-    constructor(exchange, eventName) {
-        this.trader = new TraderModuleClass(exchange);
+    /*
+    * exchange - exchange client
+    * requestRateLimitPerSecond - rate limit for the above exchange
+    * emitter - opportunity emitter that the trade initiator must listen to
+    * eventName - eventName for the opportunity emitter
+    * */
+    constructor(exchange, requestRateLimitPerSecond, emitter) {
+        this.trader = new TraderModuleClass(exchange, requestRateLimitPerSecond);
 
-        // TradeInitiator listens to this event for initiating a trade on opportunity
-        this.eventName = eventName;
+        // TradeInitiator listens on this emitter for initiating a trade on opportunity
+        this.emitter = emitter;
     }
 
     start() {
         const $this = this;
         return new Pr((resolve, reject) => {
             // 0 - trade initiator - initialize
-            let tradeInitiator = new TradeInitiator($this.trader, $this.eventName);
+            let tradeInitiator = new TradeInitiator($this.trader, $this.emitter);
 
             // 1 - trade workflow bot - start
-            // TODO
-            // let tradeWorkFlowBot = new TradeWorkFlowBot();
-            let tradeWorkFlowBot = {
-                start: () => {
-                    return new Pr((resolve, reject) => {
-                        resolve(new Date().toString());
-                    })
-                }
-            };
+            let tradeWorkFlowBot = new TradeWorkFlowBot($this.trader, $this.emitter);
 
             return Pr.join(
                 tradeInitiator.initialize(),

@@ -1,7 +1,10 @@
 const deepFreeze = require('deep-freeze');
 
 const CONSTANTS = {
-    OPPORTUNITY_FOUND_EVENT_NAME: "OPPORTUNITY_FOUND"
+    // Events
+    EVENT_OPPORTUNITY_FOUND: "opportunity_found",
+    EVENT_TRADE_CREATED: "trade_created",
+    EVENT_TRADE_COMPLETED: "trade_completed"
 };
 
 module.exports = deepFreeze(CONSTANTS);

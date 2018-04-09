@@ -49,8 +49,13 @@ exports.initializeModel = (sequelize) => {
         );
     };
 
-    Trade.getInProgressTrades = () => {
-        return Trade.findAll({ where: { isComplete: false } });
+    Trade.getInProgressTrades = (phase) => {
+        let whereClause = {isComplete: false};
+        if (phase && phase.length > 0) {
+            whereClause.phase = phase;
+        }
+
+        return Trade.findAndCountAll({where: whereClause});
     };
 };
 

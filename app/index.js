@@ -1,15 +1,25 @@
 const Pr = require('bluebird');
 const ccxt = require('ccxt');
+const EventEmitter = require('events');
 
 const CONSTANTS = require('./constants');
 
 const dataStore = require('./data_store');
+
+/*
+* stateful components
+* */
 let BinanceClient = new ccxt.binance({
     apiKey: process.env.BINANCE_API_KEY,
     secret: process.env.BINANCE_SECRET
 });
+let opportunityEmitter = new EventEmitter();
+const REQUEST_RATE_LIMIT_PER_SECOND = 20;
 
-// sub apps
+
+/*
+* sub apps - stateless components
+* */
 const OpportunityBot = require('./sub_apps/opportunity/opportunity_bot');
 const OpportunityArchiver = require('./sub_apps/opportunity_archiver/opportunity_archiver');
 const Trader = require('./sub_apps/trader');
@@ -23,13 +33,23 @@ exports.initialize = () => {
 
     return Pr.join(dataStore.initialize(), () => {
         // 0 - opportunity bot
-        let opportunityBot = new OpportunityBot(BinanceClient, 20);
+        let opportunityBot = new OpportunityBot(
+            BinanceClient,
+            REQUEST_RATE_LIMIT_PER_SECOND,
+            opportunityEmitter
+        );
 
-        // 1 - opportunity archiver - no instance
-        let opportunityArchiver = new OpportunityArchiver(CONSTANTS.OPPORTUNITY_FOUND_EVENT_NAME);
+        // 1 - opportunity archiver
+        let opportunityArchiver = new OpportunityArchiver(
+            opportunityEmitter
+        );
 
         // 2 - trader
-        let trader = new Trader(BinanceClient, CONSTANTS.OPPORTUNITY_FOUND_EVENT_NAME);
+        let trader = new Trader(
+            BinanceClient,
+            REQUEST_RATE_LIMIT_PER_SECOND,
+            opportunityEmitter
+        );
 
         return Pr.join(
             opportunityBot.start(),

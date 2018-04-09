@@ -1,20 +1,20 @@
 const Pr = require('bluebird');
+const CONSTANTS = require('../../constants');
 
-let opportunityEmitter = require('../../modules/opportunity/opportunity_emitter');
 const OpportunityModule = require('../../modules/opportunity');
 
 const MODULE_NAME = "OPPORTUNITY_ARCHIVER";
 
 class OpportunityArchiver {
     // Archiver listens to this event for archiving opportunity
-    constructor(eventName) {
-        this.eventName = eventName
+    constructor(emitter) {
+        this.emitter = emitter;
     }
 
     initialize() {
         const $this = this;
         return new Pr((resolve, reject) => {
-            opportunityEmitter.on($this.eventName, (opportunity) => {
+            $this.emitter.on(CONSTANTS.EVENT_OPPORTUNITY_FOUND, (opportunity) => {
 
                 OpportunityModule.save(opportunity).then((savedOpportunity) => {
                     // console.log(`${MODULE_NAME}: OpportunityModule - savedOpportunity: `, savedOpportunity.id);

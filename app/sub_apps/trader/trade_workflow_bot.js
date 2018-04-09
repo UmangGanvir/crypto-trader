@@ -1,79 +1,85 @@
 const Pr = require('bluebird');
-const _ = require('underscore');
-const EventEmitter = require('events');
-const utils = require('../../utils/index');
 
 let Bot = require('../../modules/bot/index');
-let Opportunity = require('../../models/opportunity');
 
 class TradeWorkflowBot extends Bot {
-    constructor(exchange, requestRateLimitPerSecond) {
+    constructor(trader, emitter) {
         super(
-            "OPPORTUNITY",
-            (1000/requestRateLimitPerSecond)
+            "TRADE_WORKFLOW",
+            (1000/trader.requestRateLimitPerSecond)
         );
-        super.setTaskFunction(this.emitOpportunities.bind(this));
-        this.exchange = exchange;
-        this.requestRateLimitPerSecond = requestRateLimitPerSecond;
-        this.opportunityEmitter = new EventEmitter();
+        this.trader = trader;
+        this.emitter = emitter;
+
+        const $this = this;
+        super.setTaskFunction(() => {
+            console.log("setTaskFunction - transitionPhase ...");
+            return $this.transitionPhase.call($this);
+        });
+
     }
 
-    findOpportunityForSymbol(symbol) {
+    transitionPhase() {
+        console.log("transitionPhase...");
         let $this = this;
-        return utils.delayPromise(
-            $this.exchange.fetchTicker(symbol),
-            (1000/$this.requestRateLimitPerSecond)
-        ).then((ticker) => {
-            return utils.delayPromise(
-                $this.exchange.fetchOrderBook(symbol),
-                (1000/$this.requestRateLimitPerSecond)
-            ).then((orderBook) => {
-                let opportunity = new Opportunity(ticker, orderBook);
-                return Pr.resolve(opportunity);
-            })
+        return $this.transitionBuyPhaseTrades().then((transitionedBuyTradeIds) => {
+            return $this.transitionSellPhaseTrades().then((transitionedSellTradeIds) => {
+                console.log("=============================");
+                console.log("TRADE_WORKFLOW - transitionPhase - transitionedBuyTradeIds: " + transitionedBuyTradeIds.length);
+                console.log("TRADE_WORKFLOW - transitionPhase - transitionedSellTradeIds: " + transitionedSellTradeIds.length);
+                console.log("=============================");
+                console.log();
+            });
         });
     }
 
-    emitOpportunities() {
+    /*
+    * Returns the ids of the buy trades that were transitioned
+    * */
+    transitionBuyPhaseTrades() {
         let $this = this;
-        return new Pr((resolve, reject) => {
-            setTimeout(() => {
+        return $this.trader.getInProgressTrades('buy').then(({buyTrades, count}) => {
+            if (count === 0) {
+                return [];
+            }
 
-                $this.exchange.loadMarkets().then((markets) => {
-                    let marketsArr = _.values(markets);
-                    let ethereumMarketsArr = _.filter(marketsArr, (market) => {
-                        return market.quoteId === "ETH";
-                    });
+            return Pr.reduce(buyTrades, (buyTradeIds, buyTrade) => {
+                return $this.trader.transitionBuyTrade(buyTrade.id, buyTrade.buyOrderId).then((buyTradeId) => {
+                    buyTradeIds.push(buyTradeId);
+                    return buyTradeIds;
+                });
+            }, []).then((buyTradeIds) => {
+                // console.log("=============================");
+                // console.log("TRADE_WORKFLOW - transitionBuyPhaseTrades - : " + buyTradeIds.length);
+                // console.log("=============================");
+                // console.log();
+                return buyTradeIds;
+            });
+        });
+    }
 
-                    return Pr.reduce(ethereumMarketsArr, (opportunities, ethereumMarket) => {
-                        return $this.findOpportunityForSymbol(ethereumMarket.symbol).then((opportunity) => {
-                            if (opportunity.isValid()) {
-                                $this.opportunityEmitter.emit('OPPORTUNITY_FOUND', opportunity);
-                                // // store into db + emit (elsewhere - trade initiator)
-                                // console.log(ethereumMarket.symbol + ": ", JSON.stringify(opportunity));
-                                //
-                                // if (opportunity.isGreat()) {
-                                //     console.log("\n----------GREAT---------------");
-                                //     console.log(ethereumMarket.symbol + ": ", opportunity);
-                                //     console.log("--------------------------------\n");
-                                // }
-                                opportunities.push(opportunity);
-                            }
-                            return opportunities;
-                        });
-                    }, []).then((opportunities) => {
-                        // console.log("=============================");
-                        // console.log("opportunities found: " +  opportunities.length + " / " + ethereumMarketsArr.length);
-                        // console.log("=============================");
-                        // console.log();
-                        resolve(opportunities);
-                    });
+    /*
+    * Returns the ids of the sell trades that were transitioned
+    * */
+    transitionSellPhaseTrades() {
+        let $this = this;
+        return $this.trader.getInProgressTrades('sell').then(({sellTrades, count}) => {
+            if (count === 0) {
+                return [];
+            }
 
-                }).catch((err) => {
-                    reject(err);
-                })
-
-            }, (1000/$this.requestRateLimitPerSecond));
+            return Pr.reduce(sellTrades, (sellTradeIds, sellTrade) => {
+                return $this.trader.transitionBuyTrade(sellTrade.id, sellTrade.buyOrderId).then((sellTradeId) => {
+                    sellTradeIds.push(sellTradeId);
+                    return sellTradeIds;
+                });
+            }, []).then((sellTradeIds) => {
+                // console.log("=============================");
+                // console.log("TRADE_WORKFLOW - transitionSellPhaseTrades - : " + sellTradeIds.length);
+                // console.log("=============================");
+                // console.log();
+                return sellTradeIds;
+            });
         });
     }
 }
