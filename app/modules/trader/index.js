@@ -13,12 +13,12 @@ class Trader {
      */
     createTradeForOpportunity(opportunity) {
         let $this = this;
-        return $this.areTradesInProgress().then(areTradesInProgress => {
+        return Trader.areTradesInProgress().then(areTradesInProgress => {
             if (areTradesInProgress) {
                 return Pr.reject("some trades are already in progress");
             }
 
-            if (opportunity.symbol === 'BNB/ETH'){
+            if (opportunity.symbol === 'BNB/ETH') {
                 return Pr.reject("Trader Module does NOT support trades in BNB!");
             }
 
@@ -30,6 +30,9 @@ class Trader {
 
                 const ethFreeBalance = balance['ETH'].free;
                 const amountToBuy = ethFreeBalance / opportunity.getHighestBid();
+                console.log(`createTradeForOpportunity - symbol: ${opportunity.symbol}`);
+                console.log(`createTradeForOpportunity - amountToBuy: ${amountToBuy}`);
+                console.log(`createTradeForOpportunity - price: ${opportunity.getHighestBid()}`);
                 // $this.exchange.createLimitBuyOrder(opportunity.symbol, ethFreeBalance /)
 
                 return TradeDataStore.createNew({
@@ -46,6 +49,9 @@ class Trader {
     * */
     transitionBuyTrade(tradeId, buyOrderId) {
         let $this = this;
+        return Pr.resolve(tradeId);
+
+        //TODO
         return $this.exchange.fetchOrder(buyOrderId).then((buyOrder) => {
             // if (buyOrder.status === 'canceled'){
             //     return Pr.reject(`trade id: ${buyTrade.id} - buy order id: ${buyTrade.buyOrderId} was found already cancelled!`);
@@ -58,10 +64,10 @@ class Trader {
             * say the price shoots up by 2% and your order has been filled by X%
             * you should then cancel the buy order and sell
             * */
-            if (buyOrder.status === 'closed' || buyOrder.status === 'canceled'){
+            if (buyOrder.status === 'closed' || buyOrder.status === 'canceled') {
                 // move phase to 'sell' by placing a sell order
 
-                const sellPrice = buyOrder.price * (1 + (process.env.TRADE_PROFIT_MARGIN_PERCENTAGE/100));
+                const sellPrice = buyOrder.price * (1 + (process.env.TRADE_PROFIT_MARGIN_PERCENTAGE / 100));
                 return $this.exchange.createLimitSellOrder(buyOrder.symbol, buyOrder.filled, sellPrice).then((sellOrder) => {
                     return TradeDataStore.moveTradeToSellPhase({
                         tradeId: tradeId,
@@ -81,15 +87,20 @@ class Trader {
     /*
     * Returns a boolean indicating - whether any trade is in progress
     * */
-    areTradesInProgress() {
-        return TradeDataStore.getInProgressTrades().then(({ trades, count }) => {
+    static areTradesInProgress() {
+        return TradeDataStore.getInProgressTrades().then(({trades, count}) => {
             return count > 0;
         });
     }
 
-    getInProgressTrades(phase) {
-        return TradeDataStore.getInProgressTrades(phase).then(({ trades, count }) => {
-            return trades;
+    /*
+    * Returns
+    * 1. array of trades
+    * 2. the count of total trades that match the criteria
+    * */
+    static getInProgressTrades(phase) {
+        return TradeDataStore.getInProgressTrades(phase).then((resp) => {
+            return {trades: resp.rows, count: resp.count};
         });
     }
 }

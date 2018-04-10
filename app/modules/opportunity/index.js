@@ -7,6 +7,7 @@ let Opportunity = require('../../models/opportunity');
 const OpportunityDataStore = require('../../data_store/mysql/opportunity').getModelClass();
 
 const MODULE_NAME = "OPPORTUNITY_MODULE";
+
 class OpportunityModule {
     constructor(exchange, requestRateLimitPerSecond, emitter) {
         this.exchange = exchange;
@@ -18,18 +19,18 @@ class OpportunityModule {
     /*
     * used to save rate limit
     * */
-    disableFindingOpportunities(){
+    disableFindingOpportunities() {
         this._disableFindingOpportunities = true;
     }
 
-    enableFindingOpportunities(){
+    enableFindingOpportunities() {
         this._disableFindingOpportunities = false;
     }
 
     findOpportunityForSymbol(symbol) {
         let $this = this;
 
-        if ($this._disableFindingOpportunities){
+        if ($this._disableFindingOpportunities) {
             return Pr.resolve(Opportunity.getInvalidOpportunity());
         }
 
@@ -53,11 +54,11 @@ class OpportunityModule {
     * returns: array of found opportunities (which might be stale)
     * Also allows to emit opportunities for real time consumption
     * */
-    findMarketOpportunities(emit=false) {
+    findMarketOpportunities(emit = false) {
         let $this = this;
 
-        if ($this._disableFindingOpportunities){
-            return Pr.resolve(Opportunity.getInvalidOpportunity());
+        if ($this._disableFindingOpportunities) {
+            return Pr.resolve([Opportunity.getInvalidOpportunity()]);
         }
 
         return utils.delayPromise(
@@ -74,10 +75,10 @@ class OpportunityModule {
                     if (opportunity.isValid()) {
                         // emit opportunity for trader
                         if (emit) {
-                            $this.emitter.emit(CONSTANTS.EVENT_OPPORTUNITY_FOUND, opportunity);
                             console.log("");
                             console.log(`${MODULE_NAME} - emitting opportunity: ${opportunity.symbol}`);
                             console.log("");
+                            $this.emitter.emit(CONSTANTS.EVENT_OPPORTUNITY_FOUND, opportunity);
                         }
                         opportunities.push(opportunity);
                     }
@@ -85,7 +86,7 @@ class OpportunityModule {
                 });
             }, []).then((opportunities) => {
                 console.log("=============================");
-                console.log("market's one round complete. opportunities found: " +  opportunities.length + " / " + ethereumMarketsArr.length);
+                console.log("market's one round complete. opportunities found: " + opportunities.length + " / " + ethereumMarketsArr.length);
                 console.log("=============================");
                 console.log();
                 return opportunities;

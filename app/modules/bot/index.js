@@ -15,31 +15,35 @@ class Bot {
         this.taskFunction = taskFunction;
     }
 
-    start() {
+    startRepeatingTask() {
         let $this = this;
         return new Pr((resolve, reject) => {
-            if (typeof $this.taskFunction !== 'function') {
-                return reject(`${$this.logPrefix} - BOT: invalid taskFunction`)
+            try {
+                if (typeof $this.taskFunction !== 'function') {
+                    return reject(`${$this.logPrefix} - BOT: invalid taskFunction`)
+                }
+
+                if (typeof $this.delayInMillis !== 'number' || $this.delayInMillis === 0) {
+                    return reject(`${$this.logPrefix} - BOT: invalid delayInMillis`);
+                }
+
+                if (!$this.active) {
+                    console.log(`${$this.logPrefix} - BOT: Stopping...`);
+                    return resolve(undefined);
+                }
+
+                setTimeout(() => {
+                    $this.taskFunction().then(() => {
+                        $this.startRepeatingTask();
+                    }).catch((err) => {
+                        return reject(`${$this.logPrefix} - BOT: taskFunction error - ${err}`);
+                    });
+                }, this.delayInMillis);
+                return resolve((new Date()).toString());
             }
-
-            if (typeof $this.delayInMillis !== 'number' || $this.delayInMillis === 0) {
-                return reject(`${$this.logPrefix} - BOT: invalid delayInMillis`);
+            catch (err) {
+                reject(err);
             }
-
-            if (!$this.active) {
-                console.log(`${$this.logPrefix} - BOT: Stopping...`);
-                return resolve(undefined);
-            }
-
-            setTimeout(() => {
-
-                $this.taskFunction().then(() => {
-                    $this.start();
-                }).catch((err) => {
-                    return reject(`${$this.logPrefix} - BOT: taskFunction error - ${err}`);
-                });
-            }, this.delayInMillis);
-            return resolve((new Date()).toString());
         });
     }
 

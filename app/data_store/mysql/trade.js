@@ -55,7 +55,7 @@ exports.initializeModel = (sequelize) => {
             whereClause.phase = phase;
         }
 
-        return Trade.findAndCountAll({where: whereClause});
+        return Trade.findAndCountAll({ where: whereClause });
     };
 };
 
