@@ -45,6 +45,12 @@ class TradeWorkflowBot extends Bot {
                 return TraderModuleClass.areTradesInProgress().then(areTradesInProgress => {
                     if (!areTradesInProgress) {
                         $this.disableTradeWorkflow();
+
+                        console.log("");
+                        console.log(`TRADE_WORKFLOW BOT - Finished transitioning all in progress trades`);
+                        console.log(`TRADE_WORKFLOW BOT - emitting event`);
+                        console.log("");
+                        $this.emitter.emit(CONSTANTS.EVENT_IN_PROGRESS_TRADES_COMPLETED);
                     }
                 });
             });

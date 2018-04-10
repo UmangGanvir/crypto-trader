@@ -32,10 +32,9 @@ class OpportunityBot extends Bot {
                 $this.opportunity.disableFindingOpportunities();
             });
 
-            // 1 - trade completed -> start finding opportunities again
-            $this.emitter.on(CONSTANTS.EVENT_TRADE_COMPLETED, (trade) => {
-                console.log(`OPPORTUNITY BOT - event: ${CONSTANTS.EVENT_TRADE_COMPLETED} received!`);
-                console.log(`OPPORTUNITY BOT - trade: `, trade);
+            // 1 - in progress trades completed -> start finding opportunities again
+            $this.emitter.on(CONSTANTS.EVENT_IN_PROGRESS_TRADES_COMPLETED, () => {
+                console.log(`OPPORTUNITY BOT - event: ${CONSTANTS.EVENT_IN_PROGRESS_TRADES_COMPLETED} received!`);
                 console.log(`OPPORTUNITY_BOT - starting... to find opportunities`);
                 console.log("");
                 $this.opportunity.enableFindingOpportunities();
