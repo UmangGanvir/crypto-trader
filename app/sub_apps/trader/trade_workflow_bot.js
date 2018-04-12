@@ -34,34 +34,32 @@ class TradeWorkflowBot extends Bot {
 
     transitionPhase() {
         let $this = this;
-        return $this.transitionBuyPhaseTrades().then((transitionedBuyTradeIds) => {
-            return $this.transitionSellPhaseTrades().then((transitionedSellTradeIds) => {
+        return $this.transitionBuyPhaseTrades().then((buyTradesProgress) => {
+            return $this.transitionSellPhaseTrades().then((sellTradesProgress) => {
                 console.log("=============================");
-                console.log("TRADE_WORKFLOW - transitionPhase - transitionedBuyTradeIds: " + transitionedBuyTradeIds);
-                console.log("TRADE_WORKFLOW - transitionPhase - transitionedSellTradeIds: " + transitionedSellTradeIds);
+                console.log("TRADE_WORKFLOW - transitionPhase - buyTradesProgress: " + buyTradesProgress);
+                console.log("TRADE_WORKFLOW - transitionPhase - sellTradesProgress: " + sellTradesProgress);
                 console.log("=============================");
                 console.log();
 
-                return TraderModuleClass.areTradesInProgress().then(areTradesInProgress => {
-                    if (!areTradesInProgress) {
-                        $this.disableTradeWorkflow();
-
-                        console.log("");
-                        console.log(`TRADE_WORKFLOW BOT - Finished transitioning all in progress trades`);
-                        console.log(`TRADE_WORKFLOW BOT - emitting event`);
-                        console.log("");
-                        $this.emitter.emit(CONSTANTS.EVENT_IN_PROGRESS_TRADES_COMPLETED);
-                    }
-                });
+                if (buyTradesProgress.length === 0 && sellTradesProgress.length === 0) {
+                    console.log("");
+                    console.log(`TRADE_WORKFLOW BOT - Finished transitioning all in progress trades`);
+                    console.log(`TRADE_WORKFLOW BOT - emitting event`);
+                    console.log("");
+                    $this.emitter.emit(CONSTANTS.EVENT_IN_PROGRESS_TRADES_COMPLETED);
+                }
+                return {
+                    buyTradesProgress: buyTradesProgress,
+                    sellTradesProgress: sellTradesProgress
+                }
             });
         });
     }
 
     /*
-    * Returns the ids of the buy trades that were transitioned
+    * Returns an array of (buy) trade progress
     * */
-
-    // TODO implement -> func returns array of [tradeProgress : { transitionedTradeId: 1, unchangedTradeId: 2 }]
     transitionBuyPhaseTrades() {
         let $this = this;
         return TraderModuleClass.getInProgressTrades('buy').then(({trades, count}) => {
@@ -69,23 +67,23 @@ class TradeWorkflowBot extends Bot {
                 return [];
             }
 
-            return Pr.reduce(trades, (buyTradeIds, buyTrade) => {
-                return $this.trader.transitionBuyTrade(buyTrade.id, buyTrade.buyOrderId).then((buyTradeId) => {
-                    buyTradeIds.push(buyTradeId);
-                    return buyTradeIds;
+            return Pr.reduce(trades, (tradesProgress, buyTrade) => {
+                return $this.trader.transitionBuyTrade(buyTrade).then((tradeProgress) => {
+                    tradesProgress.push(tradeProgress);
+                    return tradesProgress;
                 });
-            }, []).then((buyTradeIds) => {
+            }, []).then((tradesProgress) => {
                 // console.log("=============================");
-                // console.log("TRADE_WORKFLOW - transitionBuyPhaseTrades - : " + buyTradeIds.length);
+                // console.log("TRADE_WORKFLOW - transitionBuyPhaseTrades - : " + tradesProgress.length);
                 // console.log("=============================");
                 // console.log();
-                return buyTradeIds;
+                return tradesProgress;
             });
         });
     }
 
     /*
-    * Returns the ids of the sell trades that were transitioned
+    * Returns an array of (sell) trade progress
     * */
     transitionSellPhaseTrades() {
         let $this = this;
@@ -94,17 +92,17 @@ class TradeWorkflowBot extends Bot {
                 return [];
             }
 
-            return Pr.reduce(trades, (sellTradeIds, sellTrade) => {
-                return $this.trader.transitionBuyTrade(sellTrade.id, sellTrade.buyOrderId).then((sellTradeId) => {
-                    sellTradeIds.push(sellTradeId);
-                    return sellTradeIds;
+            return Pr.reduce(trades, (tradesProgress, sellTrade) => {
+                return $this.trader.transitionSellTrade(sellTrade).then((tradeProgress) => {
+                    tradesProgress.push(tradeProgress);
+                    return tradesProgress;
                 });
-            }, []).then((sellTradeIds) => {
+            }, []).then((tradesProgress) => {
                 // console.log("=============================");
-                // console.log("TRADE_WORKFLOW - transitionSellPhaseTrades - : " + sellTradeIds.length);
+                // console.log("TRADE_WORKFLOW - transitionSellPhaseTrades - : " + tradesProgress.length);
                 // console.log("=============================");
                 // console.log();
-                return sellTradeIds;
+                return tradesProgress;
             });
         });
     }

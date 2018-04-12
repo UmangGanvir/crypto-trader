@@ -2,8 +2,6 @@ const Pr = require('bluebird');
 const ccxt = require('ccxt');
 const EventEmitter = require('events');
 
-const CONSTANTS = require('./constants');
-
 const dataStore = require('./data_store');
 
 /*
@@ -11,7 +9,8 @@ const dataStore = require('./data_store');
 * */
 let BinanceClient = new ccxt.binance({
     apiKey: process.env.BINANCE_API_KEY,
-    secret: process.env.BINANCE_SECRET
+    secret: process.env.BINANCE_SECRET/*,
+    verbose: true*/
 });
 let opportunityEmitter = new EventEmitter();
 const REQUEST_RATE_LIMIT_PER_SECOND = 20;

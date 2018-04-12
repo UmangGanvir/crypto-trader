@@ -11,9 +11,10 @@ exports.initializeModel = (sequelize) => {
         id: {type: Sequelize.INTEGER, primaryKey: true, autoIncrement: true},
         symbol: {type: Sequelize.STRING, allowNull: false},
         phase: {type: Sequelize.ENUM, values: ['buy', 'sell'], index: true, allowNull: false},
-        buyOrderId: {type: Sequelize.STRING, allowNull: false, field: 'buy_order_id' },
-        sellOrderId: {type: Sequelize.STRING, field: 'sell_order_id' },
-        isComplete: { type: Sequelize.BOOLEAN, allowNull: false, defaultValue: false, field: 'is_complete' },
+        price: {type: Sequelize.DECIMAL(20, 10), allowNull: false}, // price of the symbol at the time of the record create/update
+        buyOrderId: {type: Sequelize.STRING, allowNull: false, field: 'buy_order_id'},
+        sellOrderId: {type: Sequelize.STRING, field: 'sell_order_id'},
+        isComplete: {type: Sequelize.BOOLEAN, allowNull: false, defaultValue: false, field: 'is_complete'},
         // fillPercentage: {type: Sequelize.DECIMAL(8, 5), index: true, allowNull: false, field: 'fill_percentage'},
         createdAt: {type: Sequelize.DATE(3), allowNull: false, defaultValue: Sequelize.NOW, field: 'created_at'},
         updatedAt: {type: Sequelize.DATE(3), allowNull: false, defaultValue: Sequelize.NOW, field: 'updated_at'}
@@ -23,10 +24,11 @@ exports.initializeModel = (sequelize) => {
     * Do NOT use the default `create` method available on the model directly
     * Note: You must place a buy order before creating a new trade
     * */
-    Trade.createNew = ({ symbol, buyOrderId }) => {
+    Trade.createNew = ({symbol, buyOrderId, price}) => {
         return Trade.create({
             symbol: symbol,
             phase: 'buy',
+            price: price,
             buyOrderId: buyOrderId,
             isComplete: false
         });
@@ -35,18 +37,22 @@ exports.initializeModel = (sequelize) => {
     /*
     * Note: You must place a sell order before moving to the sell phase
     * */
-    Trade.moveTradeToSellPhase = ({ tradeId, sellOrderId }) => {
+    Trade.moveTradeToSellPhase = ({tradeId, sellOrderId}) => {
         return Trade.update(
-            { phase: 'sell', sellOrderId: sellOrderId },
-            { where: { id: tradeId } }
-        );
+            {phase: 'sell', sellOrderId: sellOrderId},
+            {where: {id: tradeId}}
+        ).then((result) => {
+            return result[0]; // affected rows
+        });
     };
 
-    Trade.complete = ({ tradeId }) => {
+    Trade.complete = ({tradeId}) => {
         return Trade.update(
-            { isComplete: true },
-            { where: { id: tradeId } }
-        );
+            {isComplete: true},
+            {where: {id: tradeId}}
+        ).then((result) => {
+            return result[0]; // affected rows
+        });
     };
 
     Trade.getInProgressTrades = (phase) => {
@@ -55,7 +61,7 @@ exports.initializeModel = (sequelize) => {
             whereClause.phase = phase;
         }
 
-        return Trade.findAndCountAll({ where: whereClause });
+        return Trade.findAndCountAll({where: whereClause});
     };
 };
 
