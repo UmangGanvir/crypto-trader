@@ -15,15 +15,15 @@ class TradeInitiator {
                     console.log(`TRADE_INITIATOR- event: ${CONSTANTS.EVENT_OPPORTUNITY_FOUND} received!`);
                     console.log(`TRADE_INITIATOR - opportunity: `, opportunity);
 
-                    $this.trader.createTradeForOpportunity(opportunity).then((createdTrade) => {
-                        console.log("TRADE_INITIATOR - createdTrade: ", createdTrade);
-                        console.log("");
-                        console.log(`TRADE_INITIATOR - emitting trade: `, createdTrade);
-                        console.log("");
-                        $this.emitter.emit(CONSTANTS.EVENT_TRADE_CREATED, createdTrade);
-                    }).catch((err) => {
-                        console.error(`TRADE_INITIATOR - createTradeForOpportunity error: ${err}`);
-                    });
+                    // $this.trader.createTradeForOpportunity(opportunity).then((createdTrade) => {
+                    //     console.log("TRADE_INITIATOR - createdTrade: ", createdTrade);
+                    //     console.log("");
+                    //     console.log(`TRADE_INITIATOR - emitting trade: `, createdTrade);
+                    //     console.log("");
+                    //     $this.emitter.emit(CONSTANTS.EVENT_TRADE_CREATED, createdTrade);
+                    // }).catch((err) => {
+                    //     console.error(`TRADE_INITIATOR - createTradeForOpportunity error: ${err}`);
+                    // });
                 }
             });
             resolve(new Date().toString());

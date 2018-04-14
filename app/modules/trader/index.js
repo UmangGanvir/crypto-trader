@@ -5,9 +5,11 @@ let opportunityModuleClass = require('../../modules/opportunity');
 const TradeDataStore = require('../../data_store/mysql/trade').getModelClass();
 
 class TradeProgress {
-    constructor(tradeId, transitioned) {
+    constructor(tradeId, transitioned, reason) {
         this.tradeId = tradeId;
         this.transitioned = transitioned;
+        // TODO
+        this.reason = reason;
     }
 }
 
@@ -44,11 +46,10 @@ class Trader {
                 console.log(`createTradeForOpportunity - amountToBuy: ${amountToBuy}`);
                 console.log(`createTradeForOpportunity - price: ${opportunity.getHighestBid()}`);
                 // params : { test: true }
-                $this.exchange.createLimitBuyOrder(
+                return $this.exchange.createLimitBuyOrder(
                     opportunity.symbol,
                     amountToBuy,
-                    opportunity.getHighestBid(),
-                    {test: true}
+                    opportunity.getHighestBid()
                 ).then((buyOrder) => {
                     console.log("buyOrder: ", buyOrder);
                     return TradeDataStore.createNew({
@@ -65,18 +66,12 @@ class Trader {
      * Tries transitioning a single buy trade
      * Returns the tradeProgress
      *
-     * Note: if you're taking actions which only run as part of transition, only than can you disrespect the rate limit
+     * Note: if you're taking actions which only run as part of a transition, only than can you disrespect the rate limit
      * routine actions like fetching opportunity for open order's symbol must respect the rate limit
      * */
     transitionBuyTrade(buyTrade) {
         let $this = this;
-        // TO be used for testing createLimitBuyOrder later
-        return Pr.resolve({
-            tradeId: buyTrade.id,
-            transitioned: false
-        });
-
-        return $this.exchange.fetchOrder(buyTrade.buyOrderId).then((buyOrder) => {
+        return $this.exchange.fetchOrder(buyTrade.buyOrderId, buyTrade.symbol).then((buyOrder) => {
             if (buyOrder.status === 'canceled') {
                 return Pr.reject(`trade id: ${buyTrade.id} - buy order id: ${buyTrade.buyOrderId} was found already cancelled!`);
             }
@@ -112,7 +107,7 @@ class Trader {
             ).then((opportunity) => {
 
                 return utils.delayPromise(
-                    $this.exchange.fetchOrder(buyTrade.buyOrderId),
+                    $this.exchange.fetchOrder(buyTrade.buyOrderId, buyTrade.symbol),
                     (1000 / $this.requestRateLimitPerSecond)
                 ).then((buyOrder2) => {
 
@@ -198,6 +193,8 @@ class Trader {
                             });
                         }
                     }
+
+                    return new TradeProgress(buyTrade.id, false);
                 });
             });
         });
@@ -213,12 +210,9 @@ class Trader {
     transitionSellTrade(sellTrade) {
         let $this = this;
         // TO be used for testing later
-        return Pr.resolve({
-            tradeId: sellTrade.id,
-            transitioned: false
-        });
+        return Pr.resolve(new TradeProgress(sellTrade.id, false));
 
-        return $this.exchange.fetchOrder(sellTrade.sellOrderId).then((sellOrder) => {
+        return $this.exchange.fetchOrder(sellTrade.sellOrderId, sellTrade.symbol).then((sellOrder) => {
             if (sellOrder.status === 'canceled') {
                 return Pr.reject(`trade id: ${sellTrade.id} - sell order id: ${sellTrade.sellOrderId} was found cancelled!`);
             }
@@ -245,7 +239,7 @@ class Trader {
             ).then((opportunity) => {
 
                 return utils.delayPromise(
-                    $this.exchange.fetchOrder(sellTrade.sellOrderId),
+                    $this.exchange.fetchOrder(sellTrade.sellOrderId, sellTrade.symbol),
                     (1000 / $this.requestRateLimitPerSecond)
                 ).then((sellOrder2) => {
 

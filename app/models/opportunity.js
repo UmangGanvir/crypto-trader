@@ -5,6 +5,10 @@ class Opportunity {
         this.symbol = ticker.symbol;
         this.price = ticker.last;
         this.quoteVolume = ticker.quoteVolume;
+        // TODO implement
+        // reason - stable crypto-currencies can't be traded profitably
+        this.standardDeviation5min = 0;
+        // refactor buySellRatio
         this.buySellRatio = TradingUtils.getBuySellRatio(orderBook.bids, orderBook.asks);
 
         this._bids = orderBook.bids;
@@ -12,7 +16,8 @@ class Opportunity {
     }
 
     getHighestBid() {
-        return this._bids[0][0];
+        return this._bids[99][0];
+        // return this._bids[0][0];
     }
 
     isValid() {

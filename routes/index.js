@@ -1,9 +1,34 @@
-var express = require('express');
-var router = express.Router();
+const ccxt = require('ccxt');
+const express = require('express');
+const router = express.Router();
 
-/* GET home page. */
-router.get('/', function(req, res, next) {
-  res.render('index', { title: 'Express' });
+let BinanceClient = new ccxt.binance({
+    apiKey: process.env.BINANCE_API_KEY,
+    secret: process.env.BINANCE_SECRET/*,
+    verbose: true*/
+});
+
+router.get('/binance/markets', function (req, res, next) {
+    BinanceClient.loadMarkets().then((markets) => {
+        res.setHeader('Content-Type', 'application/json');
+        res.send(JSON.stringify({markets: markets}));
+    });
+});
+
+router.get('/binance/ticker/:baseCrypto/:quoteCrypto', function (req, res, next) {
+    const symbol = `${req.params.baseCrypto}/${req.params.quoteCrypto}`;
+    BinanceClient.fetchTicker(symbol).then((ticker) => {
+        res.setHeader('Content-Type', 'application/json');
+        res.send(JSON.stringify(ticker));
+    });
+});
+
+router.get('/binance/order/:orderId/:baseCrypto/:quoteCrypto', function (req, res, next) {
+    const symbol = `${req.params.baseCrypto}/${req.params.quoteCrypto}`;
+    BinanceClient.fetchOrder(req.params.orderId, symbol).then((order) => {
+        res.setHeader('Content-Type', 'application/json');
+        res.send(JSON.stringify(order));
+    });
 });
 
 module.exports = router;

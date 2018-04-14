@@ -37,8 +37,8 @@ class TradeWorkflowBot extends Bot {
         return $this.transitionBuyPhaseTrades().then((buyTradesProgress) => {
             return $this.transitionSellPhaseTrades().then((sellTradesProgress) => {
                 console.log("=============================");
-                console.log("TRADE_WORKFLOW - transitionPhase - buyTradesProgress: " + buyTradesProgress);
-                console.log("TRADE_WORKFLOW - transitionPhase - sellTradesProgress: " + sellTradesProgress);
+                console.log("TRADE_WORKFLOW - transitionPhase - buyTradesProgress: ", buyTradesProgress);
+                console.log("TRADE_WORKFLOW - transitionPhase - sellTradesProgress: ", sellTradesProgress);
                 console.log("=============================");
                 console.log();
 
@@ -48,6 +48,7 @@ class TradeWorkflowBot extends Bot {
                     console.log(`TRADE_WORKFLOW BOT - emitting event`);
                     console.log("");
                     $this.emitter.emit(CONSTANTS.EVENT_IN_PROGRESS_TRADES_COMPLETED);
+                    $this.disableTradeWorkflow();
                 }
                 return {
                     buyTradesProgress: buyTradesProgress,
