@@ -11,7 +11,7 @@ exports.initializeModel = (sequelize) => {
         id: {type: Sequelize.INTEGER, primaryKey: true, autoIncrement: true},
         symbol: {type: Sequelize.STRING, allowNull: false},
         phase: {type: Sequelize.ENUM, values: ['buy', 'sell'], index: true, allowNull: false},
-        price: {type: Sequelize.DECIMAL(20, 10), allowNull: false}, // price of the symbol at the time of the record create/update
+        price: {type: Sequelize.DECIMAL(20, 10), allowNull: false}, // price of the symbol at the time of the trade creation
         buyOrderId: {type: Sequelize.STRING, allowNull: false, field: 'buy_order_id'},
         sellOrderId: {type: Sequelize.STRING, field: 'sell_order_id'},
         isComplete: {type: Sequelize.BOOLEAN, allowNull: false, defaultValue: false, field: 'is_complete'},

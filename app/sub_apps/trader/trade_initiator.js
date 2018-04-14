@@ -13,7 +13,7 @@ class TradeInitiator {
             $this.emitter.on(CONSTANTS.EVENT_OPPORTUNITY_FOUND, (opportunity) => {
                 if (opportunity.isGreat()) {
                     console.log(`TRADE_INITIATOR- event: ${CONSTANTS.EVENT_OPPORTUNITY_FOUND} received!`);
-                    console.log(`TRADE_INITIATOR - opportunity: `, opportunity);
+                    console.log(`TRADE_INITIATOR - great opportunity: `, opportunity.toString());
 
                     // $this.trader.createTradeForOpportunity(opportunity).then((createdTrade) => {
                     //     console.log("TRADE_INITIATOR - createdTrade: ", createdTrade);

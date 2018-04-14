@@ -3,6 +3,7 @@ const _ = require('underscore');
 const utils = require('../../utils/index');
 const CONSTANTS = require('../../constants');
 
+const TradingUtils = require('../../utils/trading_utils');
 let Opportunity = require('../../models/opportunity');
 const OpportunityDataStore = require('../../data_store/mysql/opportunity').getModelClass();
 
@@ -38,12 +39,18 @@ class OpportunityModule {
             $this.exchange.fetchTicker(symbol),
             (1000 / $this.requestRateLimitPerSecond)
         ).then((ticker) => {
+
             return utils.delayPromise(
-                $this.exchange.fetchOrderBook(symbol),
+                $this.exchange.fetchOHLCV(symbol, '1m'),
                 (1000 / $this.requestRateLimitPerSecond)
-            ).then((orderBook) => {
-                let opportunity = new Opportunity(ticker, orderBook);
-                return Pr.resolve(opportunity);
+            ).then((OHLCVs) => {
+
+                return utils.delayPromise(
+                    $this.exchange.fetchOrderBook(symbol),
+                    (1000 / $this.requestRateLimitPerSecond)
+                ).then((orderBook) => {
+                    return new Opportunity(ticker, orderBook, OHLCVs);
+                });
             });
         });
     }
@@ -76,7 +83,7 @@ class OpportunityModule {
                         // emit opportunity for trader
                         if (emit) {
                             console.log("");
-                            console.log(`${MODULE_NAME} - emitting opportunity: ${opportunity.symbol}`);
+                            console.log(`${MODULE_NAME} - emitting opportunity: `, opportunity.symbol);
                             console.log("");
                             $this.emitter.emit(CONSTANTS.EVENT_OPPORTUNITY_FOUND, opportunity);
                         }
@@ -99,6 +106,7 @@ class OpportunityModule {
             symbol: opportunity.symbol,
             price: opportunity.price,
             quoteVolume: opportunity.quoteVolume,
+            standardDeviationMeanPercentage1min: opportunity.standardDeviationMeanPercentage1min,
             buySellRatio100: opportunity.buySellRatio.r100,
             buySellRatio50: opportunity.buySellRatio.r50,
             buySellRatio20: opportunity.buySellRatio.r20,
