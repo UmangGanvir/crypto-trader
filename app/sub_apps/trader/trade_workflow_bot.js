@@ -36,11 +36,11 @@ class TradeWorkflowBot extends Bot {
         let $this = this;
         return $this.transitionBuyPhaseTrades().then((buyTradesProgress) => {
             return $this.transitionSellPhaseTrades().then((sellTradesProgress) => {
-                console.log("=============================");
-                console.log("TRADE_WORKFLOW - transitionPhase - buyTradesProgress: ", buyTradesProgress);
-                console.log("TRADE_WORKFLOW - transitionPhase - sellTradesProgress: ", sellTradesProgress);
-                console.log("=============================");
-                console.log();
+                // console.log("=============================");
+                // console.log("TRADE_WORKFLOW - transitionPhase - buyTradesProgress: ", buyTradesProgress);
+                // console.log("TRADE_WORKFLOW - transitionPhase - sellTradesProgress: ", sellTradesProgress);
+                // console.log("=============================");
+                // console.log();
 
                 if (buyTradesProgress.length === 0 && sellTradesProgress.length === 0) {
                     console.log("");
@@ -55,6 +55,8 @@ class TradeWorkflowBot extends Bot {
                     sellTradesProgress: sellTradesProgress
                 }
             });
+        }).catch((err) => {
+            console.error(`TRADE_WORKFLOW BOT - err: `, err);
         });
     }
 
@@ -70,6 +72,9 @@ class TradeWorkflowBot extends Bot {
 
             return Pr.reduce(trades, (tradesProgress, buyTrade) => {
                 return $this.trader.transitionBuyTrade(buyTrade).then((tradeProgress) => {
+                    console.log("=============================");
+                    console.log("TRADER MODULE - transitionBuyTrade : ", tradeProgress);
+                    console.log("=============================");
                     tradesProgress.push(tradeProgress);
                     return tradesProgress;
                 });
@@ -95,6 +100,9 @@ class TradeWorkflowBot extends Bot {
 
             return Pr.reduce(trades, (tradesProgress, sellTrade) => {
                 return $this.trader.transitionSellTrade(sellTrade).then((tradeProgress) => {
+                    console.log("=============================");
+                    console.log("TRADER MODULE - transitionSellTrade : ", tradeProgress);
+                    console.log("=============================");
                     tradesProgress.push(tradeProgress);
                     return tradesProgress;
                 });
@@ -114,7 +122,7 @@ class TradeWorkflowBot extends Bot {
             // trade creation -> start trade workflow
             $this.emitter.on(CONSTANTS.EVENT_TRADE_CREATED, (trade) => {
                 console.log(`TRADE_WORKFLOW BOT - event: ${CONSTANTS.EVENT_TRADE_CREATED} received!`);
-                console.log(`TRADE_WORKFLOW BOT - trade: `, trade);
+                console.log(`TRADE_WORKFLOW BOT - trade: `, trade.toObject());
                 console.log(`TRADE_WORKFLOW BOT - starting...`);
                 console.log("");
                 $this.enableTradeWorkflow();

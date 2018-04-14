@@ -26,7 +26,6 @@ class OpportunityBot extends Bot {
             // 0 - trade creation -> stop finding opportunities
             $this.emitter.on(CONSTANTS.EVENT_TRADE_CREATED, (trade) => {
                 console.log(`OPPORTUNITY BOT - event: ${CONSTANTS.EVENT_TRADE_CREATED} received!`);
-                console.log(`OPPORTUNITY BOT - trade: `, trade);
                 console.log(`OPPORTUNITY_BOT - stopping... to find opportunities`);
                 console.log("");
                 $this.opportunity.disableFindingOpportunities();

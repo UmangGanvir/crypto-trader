@@ -20,6 +20,23 @@ exports.initializeModel = (sequelize) => {
         updatedAt: {type: Sequelize.DATE(3), allowNull: false, defaultValue: Sequelize.NOW, field: 'updated_at'}
     });
 
+    // TODO
+    // also save if it was a market sell order!
+
+    Trade.prototype.toObject = function () {
+        return {
+            id: this.id,
+            symbol: this.symbol,
+            phase: this.phase,
+            price: this.price,
+            buyOrderId: this.buyOrderId,
+            sellOrderId: this.sellOrderId,
+            isComplete: this.isComplete,
+            createdAt: this.createdAt,
+            updatedAt: this.updatedAt
+        }
+    };
+
     /*
     * Do NOT use the default `create` method available on the model directly
     * Note: You must place a buy order before creating a new trade

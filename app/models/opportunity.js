@@ -15,8 +15,7 @@ class Opportunity {
     }
 
     getHighestBid() {
-        return this._bids[99][0];
-        // return this._bids[0][0];
+        return this._bids[0][0];
     }
 
     isValid() {
@@ -35,13 +34,13 @@ class Opportunity {
         return true;
     }
 
-    toString() {
+    toObject() {
         return {
             symbol: this.symbol,
             price: this.price,
             quoteVolume: this.quoteVolume,
             standardDeviationMeanPercentage1min: this.standardDeviationMeanPercentage1min,
-            buySellRatio: this.buySellRatio ? this.buySellRatio.toString() : undefined,
+            buySellRatio: this.buySellRatio ? this.buySellRatio.toObject() : undefined,
         }
     }
 

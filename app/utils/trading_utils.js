@@ -10,7 +10,7 @@ class BuySellRatio {
         this.r5 = r5;
     }
 
-    toString() {
+    toObject() {
         return {
             r100: this.r100,
             r50: this.r50,

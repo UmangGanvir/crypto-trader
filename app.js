@@ -60,7 +60,7 @@ cryptoTrader.initialize().then(() => {
     console.log("CRYPTO - TRADER: running.....");
     console.log();
 }).catch((err) => {
-    console.error(err);
+    console.error("CRYPTO - TRADER: err: ", err);
 });
 
 module.exports = app;

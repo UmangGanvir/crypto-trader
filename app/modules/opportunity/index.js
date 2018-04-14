@@ -3,7 +3,6 @@ const _ = require('underscore');
 const utils = require('../../utils/index');
 const CONSTANTS = require('../../constants');
 
-const TradingUtils = require('../../utils/trading_utils');
 let Opportunity = require('../../models/opportunity');
 const OpportunityDataStore = require('../../data_store/mysql/opportunity').getModelClass();
 
