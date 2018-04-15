@@ -3,23 +3,29 @@ const Sequelize = require('sequelize');
 const OpportunityModel = require('./opportunity');
 const TradeyModel = require('./trade');
 
-const sequelize = new Sequelize('crypto_trader', 'root', '', {
-    host: 'localhost',
-    dialect: 'mysql',
 
-    pool: {
-        max: 5,
-        min: 0,
-        acquire: 30000,
-        idle: 10000
-    },
+const sequelize = new Sequelize(
+    process.env.DATA_STORE_MYSQL_DB_NAME,
+    process.env.DATA_STORE_MYSQL_USERNAME,
+    process.env.DATA_STORE_MYSQL_PASSWORD,
+    {
+        host: process.env.DATA_STORE_MYSQL_HOST,
+        dialect: 'mysql',
 
-    // logging: console.log,
-    logging: false,
+        pool: {
+            max: 5,
+            min: 0,
+            acquire: 30000,
+            idle: 10000
+        },
 
-    // http://docs.sequelizejs.com/manual/tutorial/querying.html#operators
-    operatorsAliases: false
-});
+        // logging: console.log,
+        logging: false,
+
+        // http://docs.sequelizejs.com/manual/tutorial/querying.html#operators
+        operatorsAliases: false
+    }
+);
 
 // initialize models on database connection
 OpportunityModel.initializeModel(sequelize);
