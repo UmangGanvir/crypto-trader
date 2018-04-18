@@ -52,13 +52,18 @@ app.use(function (err, req, res, next) {
 const cryptoTrader = require('./app/index');
 
 console.log();
-console.log("CRYPTO - TRADER: starting.....");
+console.log("CRYPTO-TRADER: initializing.....");
 console.log();
-
-cryptoTrader.initialize().then(() => {
+cryptoTrader.initialize().then((initializationTime) => {
+    console.log("Crypto-Trader - Initialized!");
     console.log();
-    console.log("CRYPTO - TRADER: running.....");
-    console.log();
+    console.log("CRYPTO-TRADER: starting.....");
+    return cryptoTrader.start().then((startTime) => {
+        console.log();
+        console.log("=================================");
+        console.log("==== Crypto-Trader - Started ====");
+        console.log("=================================");
+    });
 }).catch((err) => {
     console.error("CRYPTO - TRADER: err: ", err);
 });

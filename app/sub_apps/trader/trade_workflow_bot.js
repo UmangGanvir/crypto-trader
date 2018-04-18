@@ -5,31 +5,15 @@ let Bot = require('../../modules/bot/index');
 const TraderModuleClass = require('../../modules/trader');
 
 class TradeWorkflowBot extends Bot {
-    constructor(trader, emitter) {
-        super(
-            "TRADE_WORKFLOW",
-            (1000 / trader.requestRateLimitPerSecond)
-        );
-        this.trader = trader;
+    constructor(exchange, requestRateLimitPerSecond, emitter) {
+        super("TRADE_WORKFLOW", requestRateLimitPerSecond);
+        this.trader = new TraderModuleClass(exchange, requestRateLimitPerSecond);
         this.emitter = emitter;
 
         const $this = this;
         super.setTaskFunction(() => {
-            if ($this._disableTradeWorkflow) {
-                return Pr.resolve();
-            }
             return $this.transitionPhase.call($this);
         });
-
-        this._disableTradeWorkflow = false;
-    }
-
-    disableTradeWorkflow() {
-        this._disableTradeWorkflow = true;
-    }
-
-    enableTradeWorkflow() {
-        this._disableTradeWorkflow = false;
     }
 
     transitionPhase() {
@@ -48,7 +32,9 @@ class TradeWorkflowBot extends Bot {
                     console.log(`TRADE_WORKFLOW BOT - emitting event`);
                     console.log("");
                     $this.emitter.emit(CONSTANTS.EVENT_IN_PROGRESS_TRADES_COMPLETED);
-                    $this.disableTradeWorkflow();
+                    $this.stop().catch((err) => {
+                        console.log(`TRADE_WORKFLOW - error stopping the bot: `, err);
+                    });
                 }
                 return {
                     buyTradesProgress: buyTradesProgress,
@@ -116,30 +102,53 @@ class TradeWorkflowBot extends Bot {
         });
     }
 
+    initialize() {
+        const $this = this;
+        // trade creation -> start trade workflow
+        $this.emitter.on(CONSTANTS.EVENT_TRADE_CREATED, (trade) => {
+            console.log(`TRADE_WORKFLOW BOT - event: ${CONSTANTS.EVENT_TRADE_CREATED} received!`);
+            console.log(`TRADE_WORKFLOW BOT - trade: `, trade.toObject());
+            console.log(`TRADE_WORKFLOW BOT - starting...`);
+            console.log("");
+            $this.start().catch((err) => {
+                console.log(`TRADE_WORKFLOW - error starting the bot: `, err);
+            });
+        });
+        return Pr.resolve(new Date().toString());
+    }
+
     start() {
         const $this = this;
-        try {
-            // trade creation -> start trade workflow
-            $this.emitter.on(CONSTANTS.EVENT_TRADE_CREATED, (trade) => {
-                console.log(`TRADE_WORKFLOW BOT - event: ${CONSTANTS.EVENT_TRADE_CREATED} received!`);
-                console.log(`TRADE_WORKFLOW BOT - trade: `, trade.toObject());
-                console.log(`TRADE_WORKFLOW BOT - starting...`);
-                console.log("");
-                $this.enableTradeWorkflow();
-            });
+        if ($this.isBotActive()) {
+            return Pr.reject(`TRADE_WORKFLOW BOT - is already running...`);
+        }
 
-            // Initialization check - stop trade workflow if no trades are in progress
-            return TraderModuleClass.areTradesInProgress().then(areTradesInProgress => {
-                if (!areTradesInProgress) {
-                    console.log(`TRADE_WORKFLOW BOT - did not find trades in progress so disabling...`);
-                    $this.disableTradeWorkflow();
-                }
-                return super.startRepeatingTask();
-            });
+        // Initialization check - stop trade workflow if no trades are in progress
+        return TraderModuleClass.areTradesInProgress().then(areTradesInProgress => {
+            if (!areTradesInProgress) {
+                return Pr.reject("No trades in progress found");
+            }
+            return super.activateBot();
+        });
+    }
+
+    /*
+    * returns the time when the module stopped if it did
+    * else rejects promise
+    * */
+    stop() {
+        const $this = this;
+        if (!$this.isBotActive()) {
+            return Pr.reject(`TRADE_WORKFLOW BOT - has already been stopped...`);
         }
-        catch (err) {
-            return Pr.reject(err);
-        }
+
+        return TraderModuleClass.areTradesInProgress().then(areTradesInProgress => {
+            if (areTradesInProgress) {
+                console.log(`TRADE_WORKFLOW BOT - found trades in progress so not stopping...`);
+                return Pr.reject("Trades in progress found!");
+            }
+            return super.deactivateBot();
+        });
     }
 }
 

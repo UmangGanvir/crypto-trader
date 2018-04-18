@@ -19,7 +19,7 @@ class OpportunityArchiver {
                 OpportunityModule.save(opportunity).then((savedOpportunity) => {
                     // console.log(`${MODULE_NAME}: OpportunityModule - savedOpportunity: `, savedOpportunity.id);
                 }).catch((err) => {
-                    console.log(`${MODULE_NAME}: OpportunityModule - err saving opportunity: `, err);
+                    console.log(`${MODULE_NAME} - err saving opportunity: `, err);
                 });
             });
             resolve(new Date().toString());

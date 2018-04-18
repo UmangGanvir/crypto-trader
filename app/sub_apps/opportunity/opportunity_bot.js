@@ -20,37 +20,59 @@ class OpportunityBot extends Bot {
         });
     }
 
+    initialize() {
+        const $this = this;
+
+        // 0 - trade creation -> stop finding opportunities
+        $this.emitter.on(CONSTANTS.EVENT_TRADE_CREATED, (trade) => {
+            console.log(`OPPORTUNITY BOT - event: ${CONSTANTS.EVENT_TRADE_CREATED} received!`);
+            console.log(`OPPORTUNITY_BOT - stopping... to find opportunities`);
+            console.log("");
+            $this.stop().catch((err) => {
+                console.log(`OPPORTUNITY_BOT - error stopping the bot: `, err);
+            });
+        });
+
+        // 1 - in progress trades completed -> start finding opportunities again
+        $this.emitter.on(CONSTANTS.EVENT_IN_PROGRESS_TRADES_COMPLETED, () => {
+            console.log(`OPPORTUNITY BOT - event: ${CONSTANTS.EVENT_IN_PROGRESS_TRADES_COMPLETED} received!`);
+            console.log(`OPPORTUNITY_BOT - starting...`);
+            console.log("");
+            $this.start().catch((err) => {
+                console.log(`OPPORTUNITY_BOT - error starting the bot: `, err);
+            });
+        });
+        return Pr.resolve(new Date().toString());
+    }
+
     start() {
         const $this = this;
-        try {
-            // 0 - trade creation -> stop finding opportunities
-            $this.emitter.on(CONSTANTS.EVENT_TRADE_CREATED, (trade) => {
-                console.log(`OPPORTUNITY BOT - event: ${CONSTANTS.EVENT_TRADE_CREATED} received!`);
-                console.log(`OPPORTUNITY_BOT - stopping... to find opportunities`);
-                console.log("");
-                $this.opportunity.disableFindingOpportunities();
-            });
-
-            // 1 - in progress trades completed -> start finding opportunities again
-            $this.emitter.on(CONSTANTS.EVENT_IN_PROGRESS_TRADES_COMPLETED, () => {
-                console.log(`OPPORTUNITY BOT - event: ${CONSTANTS.EVENT_IN_PROGRESS_TRADES_COMPLETED} received!`);
-                console.log(`OPPORTUNITY_BOT - starting... to find opportunities`);
-                console.log("");
-                $this.opportunity.enableFindingOpportunities();
-            });
-
-            // Initialization check - don't find opportunities if trades are in progress
-            return TraderModuleClass.areTradesInProgress().then(areTradesInProgress => {
-                if (areTradesInProgress) {
-                    console.log(`OPPORTUNITY BOT - found trades in progress so disabling... to find opportunities`);
-                    $this.opportunity.disableFindingOpportunities();
-                }
-                return super.startRepeatingTask();
-            });
+        if ($this.isBotActive()) {
+            return Pr.reject(`OPPORTUNITY_BOT - is already running...`);
         }
-        catch (err) {
-            return Pr.reject(err);
+
+        // Initialization check - don't find opportunities if trades are in progress
+        return TraderModuleClass.areTradesInProgress().then(areTradesInProgress => {
+            if (areTradesInProgress) {
+                return Pr.reject("Trades in progress found!");
+            }
+            $this.opportunity.enableFindingOpportunities();
+            return super.activateBot();
+        });
+    }
+
+    /*
+    * returns the time when the module stopped if it did
+    * else rejects promise
+    * */
+    stop() {
+        const $this = this;
+        if (!$this.isBotActive()) {
+            return Pr.reject(`OPPORTUNITY_BOT - has already been stopped...`);
         }
+
+        $this.opportunity.disableFindingOpportunities();
+        return super.deactivateBot();
     }
 }
 

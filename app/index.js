@@ -23,42 +23,59 @@ const OpportunityBot = require('./sub_apps/opportunity/opportunity_bot');
 const OpportunityArchiver = require('./sub_apps/opportunity_archiver/opportunity_archiver');
 const Trader = require('./sub_apps/trader');
 
+const TraderModuleClass = require('./modules/trader');
+
 /**
  * @desc
- * 0 - initializes core project dependencies
- * 0 - initializes all the sub apps of the project
+ * Crypto Trader includes the following sub-apps
+ * 0 - Opportunity Bot
+ * 1 - Opportunity Archiver
+ * 2 - Trader
  */
-exports.initialize = () => {
+class CryptoTrader {
+    constructor(exchange, requestRateLimitPerSecond, emitter) {
+        // sub-apps
+        this.opportunityBot = new OpportunityBot(exchange, requestRateLimitPerSecond, emitter);
+        this.opportunityArchiver = new OpportunityArchiver(emitter);
+        this.trader = new Trader(exchange, requestRateLimitPerSecond, emitter);
+    }
 
-    return Pr.join(dataStore.initialize(), () => {
-        // 0 - opportunity bot
-        let opportunityBot = new OpportunityBot(
-            BinanceClient,
-            REQUEST_RATE_LIMIT_PER_SECOND,
-            opportunityEmitter
-        );
+    initialize() {
+        return Pr.join(dataStore.initialize(), () => {
+            return Pr.join(
+                this.opportunityBot.initialize(),
+                this.opportunityArchiver.initialize(),
+                this.trader.initialize(),
+                (opportunityBotInitializationTime, opportunityArchiverInitializationTime, traderInitializationTime) => {
+                    console.log("Opportunity Bot - Initialized... at Time: ", opportunityBotInitializationTime);
+                    console.log("Opportunity Archiver - Initialized... at Time: ", opportunityArchiverInitializationTime);
+                    console.log("Trader - Initialized at Time: ", traderInitializationTime);
+                    console.log();
+                });
+        });
+    }
 
-        // 1 - opportunity archiver
-        let opportunityArchiver = new OpportunityArchiver(
-            opportunityEmitter
-        );
+    start() {
+        const $this = this;
+        return TraderModuleClass.areTradesInProgress().then(areTradesInProgress => {
+            if (areTradesInProgress) {
+                console.log("CRYPTO-TRADER: found trades in progress... starting trader!");
+                return $this.trader.start();
+            }
+            console.log("CRYPTO-TRADER: found no trades in progress... starting opportunity bot!");
+            return $this.opportunityBot.start();
+        });
+    }
 
-        // 2 - trader
-        let trader = new Trader(
-            BinanceClient,
-            REQUEST_RATE_LIMIT_PER_SECOND,
-            opportunityEmitter
-        );
+    stop() {
+        const $this = this;
+        return TraderModuleClass.areTradesInProgress().then(areTradesInProgress => {
+            if (areTradesInProgress) {
+                return Pr.reject("trades are in progress - can not stop");
+            }
+            return $this.opportunityBot.stop();
+        });
+    }
+}
 
-        return Pr.join(
-            opportunityBot.start(),
-            opportunityArchiver.initialize(),
-            trader.start(),
-            (opportunityBotStartTime, opportunityArchiverStartTime, traderStartTime) => {
-                console.log("Opportunity Bot - Start Time: ", opportunityBotStartTime);
-                console.log("Opportunity Archiver - Start Time: ", opportunityArchiverStartTime);
-                console.log("Trader - Start Time: ", traderStartTime);
-                console.log();
-            });
-    });
-};
+module.exports = new CryptoTrader(BinanceClient, REQUEST_RATE_LIMIT_PER_SECOND, opportunityEmitter);

@@ -36,9 +36,9 @@ class Trader {
 
             return $this.exchange.fetchBalance().then((balance) => {
                 const bnbFreeBalance = balance['BNB'].free;
-                // if (bnbFreeBalance < 0.2) {
-                //     return Pr.reject("BNB balance is below 0.2!");
-                // }
+                if (bnbFreeBalance < 0.2) {
+                    return Pr.reject("BNB balance is below 0.2!");
+                }
 
                 const ethFreeBalance = balance['ETH'].free;
                 const amountToBuy = ethFreeBalance / opportunity.getHighestBid();
