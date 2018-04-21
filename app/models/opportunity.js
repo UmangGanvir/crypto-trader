@@ -54,6 +54,7 @@ class Opportunity {
     ungreatnessReason() {
         const OPPORTUNITY_MIN_QUOTE_VOLUME = parseFloat(process.env.OPPORTUNITY_MIN_QUOTE_VOLUME);
         const OPPORTUNITY_MIN_STD_DEVIATION_MEAN_PERCENTAGE = parseFloat(process.env.OPPORTUNITY_MIN_STD_DEVIATION_MEAN_PERCENTAGE);
+        const OPPORTUNITY_MAX_STD_DEVIATION_MEAN_PERCENTAGE = parseFloat(process.env.OPPORTUNITY_MAX_STD_DEVIATION_MEAN_PERCENTAGE);
         const OPPORTUNITY_GREATNESS_RATIO = parseFloat(process.env.OPPORTUNITY_GREATNESS_RATIO);
 
         // 0 - should have minimum quote
@@ -64,6 +65,11 @@ class Opportunity {
         // 1 - standard deviation mean percentage for 1m should be higher than minimum configured
         if (this.standardDeviationMeanPercentage1min < OPPORTUNITY_MIN_STD_DEVIATION_MEAN_PERCENTAGE) {
             return `standardDeviationMeanPercentage1min is less than OPPORTUNITY_MIN_STD_DEVIATION_MEAN_PERCENTAGE: ${OPPORTUNITY_MIN_STD_DEVIATION_MEAN_PERCENTAGE}`;
+        }
+
+        // 2 - standard deviation mean percentage for 1m should be lesser than maximum configured
+        if (this.standardDeviationMeanPercentage1min > OPPORTUNITY_MAX_STD_DEVIATION_MEAN_PERCENTAGE) {
+            return `standardDeviationMeanPercentage1min is more than OPPORTUNITY_MAX_STD_DEVIATION_MEAN_PERCENTAGE: ${OPPORTUNITY_MAX_STD_DEVIATION_MEAN_PERCENTAGE}`;
         }
 
         if (this.buySellRatio.r100 < OPPORTUNITY_GREATNESS_RATIO) {

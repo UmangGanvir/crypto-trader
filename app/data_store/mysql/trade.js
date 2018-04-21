@@ -14,6 +14,7 @@ exports.initializeModel = (sequelize) => {
         price: {type: Sequelize.DECIMAL(20, 10), allowNull: false}, // price of the symbol at the time of the trade creation
         buyOrderId: {type: Sequelize.STRING, allowNull: false, field: 'buy_order_id'},
         sellOrderId: {type: Sequelize.STRING, field: 'sell_order_id'},
+        marketSellOrderId: {type: Sequelize.STRING, field: 'market_sell_order_id'},
         isComplete: {type: Sequelize.BOOLEAN, allowNull: false, defaultValue: false, field: 'is_complete'},
         // fillPercentage: {type: Sequelize.DECIMAL(8, 5), index: true, allowNull: false, field: 'fill_percentage'},
         createdAt: {type: Sequelize.DATE(3), allowNull: false, defaultValue: Sequelize.NOW, field: 'created_at'},
@@ -63,9 +64,14 @@ exports.initializeModel = (sequelize) => {
         });
     };
 
-    Trade.complete = ({tradeId}) => {
+    Trade.complete = ({tradeId, marketSellOrderId}) => {
+        let updateParams = {isComplete: true};
+        if (marketSellOrderId) {
+            updateParams.marketSellOrderId = marketSellOrderId
+        }
+
         return Trade.update(
-            {isComplete: true},
+            updateParams,
             {where: {id: tradeId}}
         ).then((result) => {
             return result[0]; // affected rows
