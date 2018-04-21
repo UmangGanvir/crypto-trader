@@ -1,6 +1,6 @@
 let config = require('dotenv').config();
 if (config.error) {
-    throw config.error
+    console.log("dotenv config.error: ", config.error);
 }
 
 var express = require('express');
