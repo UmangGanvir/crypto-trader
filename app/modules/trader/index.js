@@ -257,7 +257,7 @@ class Trader {
                             // 1 - 0 - cancel the order on price drop
                             return $this.exchange.cancelOrder(sellTrade.sellOrderId, sellTrade.symbol).then((cancelOrderResp) => {
 
-                                $this.exchange.createMarketSellOrder(sellOrder.symbol, sellOrder2.filled).then((marketSellOrder) => {
+                                return $this.exchange.createMarketSellOrder(sellOrder.symbol, sellOrder2.filled).then((marketSellOrder) => {
                                     console.log("TRADER_MODULE - marketSellOrder: ", marketSellOrder);
 
                                     // mark the trade as complete
