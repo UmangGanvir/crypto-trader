@@ -19,14 +19,14 @@ class TradeInitiator {
                 logger.info(`event: ${CONSTANTS.EVENT_OPPORTUNITY_FOUND} received with great opportunity!`);
                 logger.info(opportunity.toObject());
 
-                // $this.trader.createTradeForOpportunity(opportunity).then((createdTrade) => {
-                //     logger.info(`emitting created trade..`);
-                //     logger.info(createdTrade.toObject());
-                //     $this.emitter.emit(CONSTANTS.EVENT_TRADE_CREATED, createdTrade);
-                // }).catch((err) => {
-                //     logger.error(`createTradeForOpportunity error`);
-                //     logger.error(err);
-                // });
+                $this.trader.createTradeForOpportunity(opportunity).then((createdTrade) => {
+                    logger.info(`emitting created trade..`);
+                    logger.info(createdTrade.toObject());
+                    $this.emitter.emit(CONSTANTS.EVENT_TRADE_CREATED, createdTrade);
+                }).catch((err) => {
+                    logger.error(`createTradeForOpportunity error`);
+                    logger.error(err);
+                });
             }
         });
         return Pr.resolve(true);
