@@ -1,6 +1,9 @@
+const MODULE_NAME = "$CRYPTO_TRADER$";
+
 const Pr = require('bluebird');
 const ccxt = require('ccxt');
 const EventEmitter = require('events');
+const logger = require('./modules/logger')(MODULE_NAME);
 
 const dataStore = require('./data_store');
 
@@ -46,11 +49,11 @@ class CryptoTrader {
                 this.opportunityBot.initialize(),
                 this.opportunityArchiver.initialize(),
                 this.trader.initialize(),
-                (opportunityBotInitializationTime, opportunityArchiverInitializationTime, traderInitializationTime) => {
-                    console.log("Opportunity Bot - Initialized... at Time: ", opportunityBotInitializationTime);
-                    console.log("Opportunity Archiver - Initialized... at Time: ", opportunityArchiverInitializationTime);
-                    console.log("Trader - Initialized at Time: ", traderInitializationTime);
-                    console.log();
+                (opportunityBotInitialized, opportunityArchiverInitialized, traderInitialized) => {
+                    logger.info(`Opportunity Bot - initialized!`);
+                    logger.info(`Opportunity Archiver - initialized!`);
+                    logger.info(`Trader - initialized!`);
+                    return true;
                 });
         });
     }
@@ -59,10 +62,10 @@ class CryptoTrader {
         const $this = this;
         return TraderModuleClass.areTradesInProgress().then(areTradesInProgress => {
             if (areTradesInProgress) {
-                console.log("CRYPTO-TRADER: found trades in progress... starting trader!");
+                logger.info(`found trades in progress... starting trader!`);
                 return $this.trader.start();
             }
-            console.log("CRYPTO-TRADER: found no trades in progress... starting opportunity bot!");
+            logger.info(`found no trades in progress... starting opportunity bot!`);
             return $this.opportunityBot.start();
         });
     }

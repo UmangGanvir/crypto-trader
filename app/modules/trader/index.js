@@ -1,11 +1,15 @@
+const MODULE_NAME = "TRADER_MODULE";
+
 const Pr = require('bluebird');
 const utils = require('../../utils/index');
+const logger = require('../../modules/logger')(MODULE_NAME);
 
 let opportunityModuleClass = require('../../modules/opportunity');
 const TradeDataStore = require('../../data_store/mysql/trade').getModelClass();
 
 class TradeProgress {
-    constructor(tradeId, symbol, transitioned, reason) {
+    constructor(phase, tradeId, symbol, transitioned, reason) {
+        this.phase = phase;
         this.tradeId = tradeId;
         this.symbol = symbol;
         this.transitioned = transitioned;
@@ -48,7 +52,8 @@ class Trader {
                     amountToBuy,
                     opportunity.getHighestBid()
                 ).then((buyOrder) => {
-                    console.log("TRADER_MODULE - buyOrder: ", buyOrder);
+                    logger.info(`buy order placed!`);
+                    logger.info(buyOrder);
                     return TradeDataStore.createNew({
                         symbol: opportunity.symbol,
                         buyOrderId: buyOrder.id,
@@ -85,7 +90,8 @@ class Trader {
                         buyOrder.filled,
                         sellPrice
                     ).then((sellOrder) => {
-                        console.log("TRADER_MODULE - sellOrder: ", sellOrder);
+                        logger.info(`sell order placed`);
+                        logger.info(sellOrder);
 
                         return TradeDataStore.moveTradeToSellPhase({
                             tradeId: buyTrade.id,
@@ -98,7 +104,7 @@ class Trader {
                                 Updated incorrect number of rows: ${affectedRows} - placing sell order post buy order close.`
                                 );
                             }
-                            return new TradeProgress(buyTrade.id, buyTrade.symbol, true, "buy order was closed / fulfilled!");
+                            return new TradeProgress('buy', buyTrade.id, buyTrade.symbol, true, "buy order was closed / fulfilled!");
                         });
                     });
                 }
@@ -115,7 +121,7 @@ class Trader {
 
                         if (buyOrder2.status === 'closed') {
                             // let the order be handled in next transition
-                            return new TradeProgress(buyTrade.id, buyTrade.symbol, false, "buy order was closed but letting next transition to handle it!");
+                            return new TradeProgress(`buy`, buyTrade.id, buyTrade.symbol, false, "buy order was closed but letting next transition to handle it!");
                         }
 
                         // 1 - check if price has gone up by more than configured PRICE_SPIKE
@@ -143,13 +149,14 @@ class Trader {
                                             Updated incorrect number of rows: ${affectedRows} for completing order by cancelling buy order`
                                             );
                                         }
-                                        return new TradeProgress(buyTrade.id, buyTrade.symbol, true, "price hike - cancelled buy order - unfulfilled so order complete");
+                                        return new TradeProgress(`buy`, buyTrade.id, buyTrade.symbol, true, "price hike - cancelled buy order - unfulfilled so order complete");
                                     });
                                 } else {
                                     const TRADE_PROFIT_MARGIN_PERCENTAGE_PRICE_SPIKE = parseFloat(process.env.TRADE_PROFIT_MARGIN_PERCENTAGE_PRICE_SPIKE);
                                     const sellPrice = buyOrder.price * (1 + (TRADE_PROFIT_MARGIN_PERCENTAGE_PRICE_SPIKE / 100));
                                     return $this.exchange.createLimitSellOrder(buyOrder.symbol, buyOrder2.filled, sellPrice).then((sellOrder) => {
-                                        console.log("TRADER_MODULE - sellOrder: ", sellOrder);
+                                        logger.info(`price hike - somewhat filled buy order cancelled - sell order placed!`);
+                                        logger.info(sellOrder);
 
                                         return TradeDataStore.moveTradeToSellPhase({
                                             tradeId: buyTrade.id,
@@ -162,7 +169,7 @@ class Trader {
                                 Updated incorrect number of rows: ${affectedRows} for placing sell order post 2% price hike`
                                                 );
                                             }
-                                            return new TradeProgress(buyTrade.id, buyTrade.symbol, true, "price hike - cancelled buy order - x% filled - moving to sell");
+                                            return new TradeProgress(`buy`, buyTrade.id, buyTrade.symbol, true, "price hike - cancelled buy order - x% filled - moving to sell");
                                         });
                                     });
                                 }
@@ -184,13 +191,13 @@ class Trader {
                                             Updated incorrect number of rows: ${affectedRows} for cancelling unfilled buy order on opportunity being lost`
                                             );
                                         }
-                                        return new TradeProgress(buyTrade.id, buyTrade.symbol, true, "opportunity lost - unfilled buy order - cancelling order + complete");
+                                        return new TradeProgress(`buy`, buyTrade.id, buyTrade.symbol, true, "opportunity lost - unfilled buy order - cancelling order + complete");
                                     });
                                 });
                             }
                         }
 
-                        return new TradeProgress(buyTrade.id, buyTrade.symbol, false, "no shit changed");
+                        return new TradeProgress(`buy`, buyTrade.id, buyTrade.symbol, false, "no shit changed");
                     });
                 });
             });
@@ -229,7 +236,7 @@ class Trader {
                             Updated incorrect number of rows: ${affectedRows} for closing trade post sell order complete`
                             );
                         }
-                        return new TradeProgress(sellTrade.id, sellTrade.symbol, true, "sell order fulfilled!");
+                        return new TradeProgress(`sell`, sellTrade.id, sellTrade.symbol, true, "sell order fulfilled!");
                     });
                 }
 
@@ -245,7 +252,7 @@ class Trader {
 
                         if (sellOrder2.status === 'closed') {
                             // let the order be handled in next transition
-                            return new TradeProgress(sellTrade.id, sellTrade.symbol, false, "sell order was closed but letting next transition to handle it!");
+                            return new TradeProgress(`sell`, sellTrade.id, sellTrade.symbol, false, "sell order was closed but letting next transition to handle it!");
                         }
 
                         // 1 - check if price has gone down by more than configured PRICE_SPIKE
@@ -258,7 +265,8 @@ class Trader {
                             return $this.exchange.cancelOrder(sellTrade.sellOrderId, sellTrade.symbol).then((cancelOrderResp) => {
 
                                 return $this.exchange.createMarketSellOrder(sellOrder.symbol, sellOrder2.filled).then((marketSellOrder) => {
-                                    console.log("TRADER_MODULE - marketSellOrder: ", marketSellOrder);
+                                    logger.warn(`price drop - market sell order placed!`);
+                                    logger.info(marketSellOrder);
 
                                     // mark the trade as complete
                                     return TradeDataStore.complete({
@@ -272,15 +280,13 @@ class Trader {
                                             Updated incorrect number of rows: ${affectedRows} for completing order by cancelling buy order`
                                             );
                                         }
-                                        console.log("ALERT!!! - Market sell order executed!!!");
-                                        console.log("ALERT!!! - Market Sell Order Id: ", marketSellOrder.id);
-                                        return new TradeProgress(sellTrade.id, sellTrade.symbol, true, "SHIT!!! Market sell order executed and trade completed!");
+                                        return new TradeProgress(`sell`, sellTrade.id, sellTrade.symbol, true, "SHIT!!! Market sell order executed and trade completed!");
                                     });
                                 });
                             });
                         }
 
-                        return new TradeProgress(sellTrade.id, sellTrade.symbol, false, "no shit changed");
+                        return new TradeProgress(`sell`, sellTrade.id, sellTrade.symbol, false, "no shit changed");
                     });
                 });
             });

@@ -1,4 +1,7 @@
+const MODULE_NAME = "TRADER_SUB_APP";
+
 const Pr = require('bluebird');
+const logger = require('../../modules/logger')(MODULE_NAME);
 
 const TradeInitiator = require('./trade_initiator');
 const TradeWorkFlowBot = require('./trade_workflow_bot');
@@ -18,11 +21,10 @@ class Trader {
         return Pr.join(
             this.tradeInitiator.initialize(),
             this.tradeWorkFlowBot.initialize(),
-            (tradeInitiatorInitializationTime, tradeWorkFlowBotInitializationTime) => {
-                console.log("Trader - Trade Initiator - Initialization Time: ", tradeInitiatorInitializationTime);
-                console.log("Trader - Trade Workflow Bot - Initialization Time: ", tradeWorkFlowBotInitializationTime);
-                console.log();
-                return (new Date()).toString();
+            (tradeInitiatorInitialized, tradeWorkFlowBotInitialized) => {
+                logger.info(`Trade Initiator - initialized!`);
+                logger.info(`Trade Workflow Bot - initialized!`);
+                return true;
             });
     }
 
@@ -30,9 +32,8 @@ class Trader {
         return Pr.join(
             this.tradeWorkFlowBot.start(),
             (tradeWorkFlowBotStartTime) => {
-                console.log("Trader - Trade Workflow Bot - Start Time: ", tradeWorkFlowBotStartTime);
-                console.log();
-                return (new Date()).toString();
+                logger.info(`Trade Workflow Bot - started..`);
+                return true;
             });
     }
 
@@ -40,8 +41,7 @@ class Trader {
         return Pr.join(
             this.tradeWorkFlowBot.stop(),
             (tradeWorkFlowBotStopTime) => {
-                console.log("Trader - Trade Workflow Bot - Stop Time: ", tradeWorkFlowBotStopTime);
-                console.log();
+                logger.info(`Trade Workflow Bot - stopped!`);
                 return (new Date()).toString();
             });
     }

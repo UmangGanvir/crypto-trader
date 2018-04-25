@@ -1,7 +1,7 @@
-let config = require('dotenv').config();
-if (config.error) {
-    console.log("dotenv config.error: ", config.error);
-}
+require('dotenv').config();
+
+const MODULE_NAME = "CRYPTO_TRADE_WEB_APPLICATION";
+const winstonLogger = require('./app/modules/logger')(MODULE_NAME);
 
 var express = require('express');
 var path = require('path');
@@ -51,21 +51,15 @@ app.use(function (err, req, res, next) {
 // crypto-trader setup
 const cryptoTrader = require('./app/index');
 
-console.log();
-console.log("CRYPTO-TRADER: initializing.....");
-console.log();
-cryptoTrader.initialize().then((initializationTime) => {
-    console.log("Crypto-Trader - Initialized!");
-    console.log();
-    console.log("CRYPTO-TRADER: starting.....");
-    return cryptoTrader.start().then((startTime) => {
-        console.log();
-        console.log("=================================");
-        console.log("==== Crypto-Trader - Started ====");
-        console.log("=================================");
+winstonLogger.verbose(`initializing.....`);
+cryptoTrader.initialize().then((initialized) => {
+    winstonLogger.verbose(`initialized!`);
+    winstonLogger.verbose(`starting.....`);
+    return cryptoTrader.start().then((started) => {
+        winstonLogger.verbose(`started!`);
     });
 }).catch((err) => {
-    console.error("CRYPTO - TRADER: err: ", err);
+    winstonLogger.error(err);
 });
 
 module.exports = app;

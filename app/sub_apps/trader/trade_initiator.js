@@ -1,5 +1,8 @@
+const MODULE_NAME = "TRADE_INITIATOR";
+
 const Pr = require('bluebird');
 const CONSTANTS = require('../../constants');
+const logger = require('../../modules/logger')(MODULE_NAME);
 
 const TraderModuleClass = require('../../modules/trader');
 
@@ -13,20 +16,20 @@ class TradeInitiator {
         const $this = this;
         $this.emitter.on(CONSTANTS.EVENT_OPPORTUNITY_FOUND, (opportunity) => {
             if (opportunity.isGreat()) {
-                console.log(`TRADE_INITIATOR- event: ${CONSTANTS.EVENT_OPPORTUNITY_FOUND} received!`);
-                console.log(`TRADE_INITIATOR - great opportunity: `, opportunity.toObject());
+                logger.info(`event: ${CONSTANTS.EVENT_OPPORTUNITY_FOUND} received with great opportunity!`);
+                logger.info(opportunity.toObject());
 
-                $this.trader.createTradeForOpportunity(opportunity).then((createdTrade) => {
-                    console.log("");
-                    console.log(`TRADE_INITIATOR - emitting created trade: `, createdTrade.toObject());
-                    console.log("");
-                    $this.emitter.emit(CONSTANTS.EVENT_TRADE_CREATED, createdTrade);
-                }).catch((err) => {
-                    console.log(`TRADE_INITIATOR - createTradeForOpportunity error: `, err);
-                });
+                // $this.trader.createTradeForOpportunity(opportunity).then((createdTrade) => {
+                //     logger.info(`emitting created trade..`);
+                //     logger.info(createdTrade.toObject());
+                //     $this.emitter.emit(CONSTANTS.EVENT_TRADE_CREATED, createdTrade);
+                // }).catch((err) => {
+                //     logger.error(`createTradeForOpportunity error`);
+                //     logger.error(err);
+                // });
             }
         });
-        return Pr.resolve(new Date().toString());
+        return Pr.resolve(true);
     }
 }
 

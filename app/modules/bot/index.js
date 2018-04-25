@@ -1,4 +1,7 @@
+const MODULE_NAME = "BOT";
+
 const Pr = require('bluebird');
+const logger = require('../../modules/logger')(MODULE_NAME);
 
 class Bot {
     constructor(logPrefix, delayInMillis) {
@@ -11,6 +14,10 @@ class Bot {
     // must call this post constructor
     // reason - child class's instantiation requires super to be called before this
     // so can't pass child instance's method as param to super
+    /**
+     * Note: Please handle promise rejects yourself
+     * This function will be called repeatedly by _startRepeatingTask which doesn't handle promise rejects
+     * */
     setTaskFunction(taskFunction) {
         this._taskFunction = taskFunction;
     }
@@ -24,6 +31,10 @@ class Bot {
         return this._startRepeatingTask();
     }
 
+    /**
+     * Note: Please handle promise rejects yourself
+     * This function calls itself with a promise dependency and hence rejects are caught post the first call
+     * */
     _startRepeatingTask() {
         let $this = this;
         return new Pr((resolve, reject) => {
@@ -37,7 +48,7 @@ class Bot {
                 }
 
                 if (!$this._isBotActive) {
-                    console.log(`${$this.logPrefix} - BOT: Stopping...`);
+                    logger.info(`${$this.logPrefix} - BOT: Stopping...`);
                     return resolve(undefined);
                 }
 
@@ -48,7 +59,7 @@ class Bot {
                         return reject(`${$this.logPrefix} - BOT: taskFunction error - ${err}`);
                     });
                 }, this.delayInMillis);
-                return resolve((new Date()).toString());
+                return resolve(true);
             }
             catch (err) {
                 reject(err);
@@ -58,7 +69,7 @@ class Bot {
 
     deactivateBot() {
         this._isBotActive = false;
-        return Pr.resolve((new Date()).toString());
+        return Pr.resolve(true);
     }
 }
 

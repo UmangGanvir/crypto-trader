@@ -1,5 +1,8 @@
+const MODULE_NAME = "TRADE_WORKFLOW_BOT";
+
 const Pr = require('bluebird');
 const CONSTANTS = require('../../constants');
+const logger = require('../../modules/logger')(MODULE_NAME);
 
 let Bot = require('../../modules/bot/index');
 let opportunityModuleClass = require('../../modules/opportunity');
@@ -16,7 +19,9 @@ class OpportunityBot extends Bot {
 
         const $this = this;
         super.setTaskFunction(() => {
-            return $this.opportunity.findMarketOpportunities.call(this.opportunity, true);
+            return $this.opportunity.findMarketOpportunities.call(this.opportunity, true).catch((err) => {
+                logger.error(err);
+            });
         });
     }
 
@@ -25,24 +30,24 @@ class OpportunityBot extends Bot {
 
         // 0 - trade creation -> stop finding opportunities
         $this.emitter.on(CONSTANTS.EVENT_TRADE_CREATED, (trade) => {
-            console.log(`OPPORTUNITY BOT - event: ${CONSTANTS.EVENT_TRADE_CREATED} received!`);
-            console.log(`OPPORTUNITY_BOT - stopping... to find opportunities`);
-            console.log("");
+            logger.info(`event: ${CONSTANTS.EVENT_TRADE_CREATED} received!`);
+            logger.info(`stopping... to find opportunities`);
             $this.stop().catch((err) => {
-                console.log(`OPPORTUNITY_BOT - error stopping the bot: `, err);
+                logger.error(`error stopping the bot`);
+                logger.error(err);
             });
         });
 
         // 1 - in progress trades completed -> start finding opportunities again
         $this.emitter.on(CONSTANTS.EVENT_IN_PROGRESS_TRADES_COMPLETED, () => {
-            console.log(`OPPORTUNITY BOT - event: ${CONSTANTS.EVENT_IN_PROGRESS_TRADES_COMPLETED} received!`);
-            console.log(`OPPORTUNITY_BOT - starting...`);
-            console.log("");
+            logger.info(`event: ${CONSTANTS.EVENT_IN_PROGRESS_TRADES_COMPLETED} received!`);
+            logger.info(`starting...`);
             $this.start().catch((err) => {
-                console.log(`OPPORTUNITY_BOT - error starting the bot: `, err);
+                logger.error(`error starting the bot`);
+                logger.error(err);
             });
         });
-        return Pr.resolve(new Date().toString());
+        return Pr.resolve(true);
     }
 
     start() {

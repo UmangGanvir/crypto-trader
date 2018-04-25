@@ -1,12 +1,13 @@
+const MODULE_NAME = "OPPORTUNITY_MODULE";
+
 const Pr = require('bluebird');
 const _ = require('underscore');
 const utils = require('../../utils/index');
 const CONSTANTS = require('../../constants');
+const logger = require('../../modules/logger')(MODULE_NAME);
 
 let Opportunity = require('../../models/opportunity');
 const OpportunityDataStore = require('../../data_store/mysql/opportunity').getModelClass();
-
-const MODULE_NAME = "OPPORTUNITY_MODULE";
 
 class OpportunityModule {
     constructor(exchange, requestRateLimitPerSecond, emitter) {
@@ -81,9 +82,7 @@ class OpportunityModule {
                     if (opportunity.isValid()) {
                         // emit opportunity for trader
                         if (emit) {
-                            console.log("");
-                            console.log(`${MODULE_NAME} - emitting opportunity: `, opportunity.symbol);
-                            console.log("");
+                            logger.info(`emitting opportunity: ${opportunity.symbol}`);
                             $this.emitter.emit(CONSTANTS.EVENT_OPPORTUNITY_FOUND, opportunity);
                         }
                         opportunities.push(opportunity);
@@ -91,10 +90,7 @@ class OpportunityModule {
                     return opportunities;
                 });
             }, []).then((opportunities) => {
-                console.log("=============================");
-                console.log("market's one round complete. opportunities found: " + opportunities.length + " / " + ethereumMarketsArr.length);
-                console.log("=============================");
-                console.log();
+                logger.info(`market's one round complete. opportunities found: " + opportunities.length + " / " + ethereumMarketsArr.length`);
                 return opportunities;
             });
         });

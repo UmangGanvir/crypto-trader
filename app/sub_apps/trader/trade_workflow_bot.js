@@ -1,5 +1,8 @@
+const MODULE_NAME = "TRADE_WORKFLOW_BOT";
+
 const Pr = require('bluebird');
 const CONSTANTS = require('../../constants');
+const logger = require('../../modules/logger')(MODULE_NAME);
 
 let Bot = require('../../modules/bot/index');
 const TraderModuleClass = require('../../modules/trader');
@@ -12,7 +15,9 @@ class TradeWorkflowBot extends Bot {
 
         const $this = this;
         super.setTaskFunction(() => {
-            return $this.transitionPhase.call($this);
+            return $this.transitionPhase.call($this).catch((err) => {
+                logger.error(err);
+            });
         });
     }
 
@@ -20,20 +25,14 @@ class TradeWorkflowBot extends Bot {
         let $this = this;
         return $this.transitionBuyPhaseTrades().then((buyTradesProgress) => {
             return $this.transitionSellPhaseTrades().then((sellTradesProgress) => {
-                // console.log("=============================");
-                // console.log("TRADE_WORKFLOW - transitionPhase - buyTradesProgress: ", buyTradesProgress);
-                // console.log("TRADE_WORKFLOW - transitionPhase - sellTradesProgress: ", sellTradesProgress);
-                // console.log("=============================");
-                // console.log();
 
                 if (buyTradesProgress.length === 0 && sellTradesProgress.length === 0) {
-                    console.log("");
-                    console.log(`TRADE_WORKFLOW BOT - Finished transitioning all in progress trades`);
-                    console.log(`TRADE_WORKFLOW BOT - emitting event`);
-                    console.log("");
+                    logger.info(`finished transitioning all in-progress-trades`);
+                    logger.info(`emitting event`);
                     $this.emitter.emit(CONSTANTS.EVENT_IN_PROGRESS_TRADES_COMPLETED);
                     $this.stop().catch((err) => {
-                        console.log(`TRADE_WORKFLOW - error stopping the bot: `, err);
+                        logger.error(`error stopping the bot`);
+                        logger.error(err);
                     });
                 }
                 return {
@@ -42,7 +41,7 @@ class TradeWorkflowBot extends Bot {
                 }
             });
         }).catch((err) => {
-            console.error(`TRADE_WORKFLOW BOT - err: `, err);
+            logger.error(err);
         });
     }
 
@@ -58,17 +57,11 @@ class TradeWorkflowBot extends Bot {
 
             return Pr.reduce(trades, (tradesProgress, buyTrade) => {
                 return $this.trader.transitionBuyTrade(buyTrade).then((tradeProgress) => {
-                    console.log("=============================");
-                    console.log("TRADER MODULE - transitionBuyTrade : ", tradeProgress);
-                    console.log("=============================");
+                    logger.info(tradeProgress);
                     tradesProgress.push(tradeProgress);
                     return tradesProgress;
                 });
             }, []).then((tradesProgress) => {
-                // console.log("=============================");
-                // console.log("TRADE_WORKFLOW - transitionBuyPhaseTrades - : " + tradesProgress.length);
-                // console.log("=============================");
-                // console.log();
                 return tradesProgress;
             });
         });
@@ -86,17 +79,11 @@ class TradeWorkflowBot extends Bot {
 
             return Pr.reduce(trades, (tradesProgress, sellTrade) => {
                 return $this.trader.transitionSellTrade(sellTrade).then((tradeProgress) => {
-                    console.log("=============================");
-                    console.log("TRADER MODULE - transitionSellTrade : ", tradeProgress);
-                    console.log("=============================");
+                    logger.info(tradeProgress);
                     tradesProgress.push(tradeProgress);
                     return tradesProgress;
                 });
             }, []).then((tradesProgress) => {
-                // console.log("=============================");
-                // console.log("TRADE_WORKFLOW - transitionSellPhaseTrades - : " + tradesProgress.length);
-                // console.log("=============================");
-                // console.log();
                 return tradesProgress;
             });
         });
@@ -106,15 +93,15 @@ class TradeWorkflowBot extends Bot {
         const $this = this;
         // trade creation -> start trade workflow
         $this.emitter.on(CONSTANTS.EVENT_TRADE_CREATED, (trade) => {
-            console.log(`TRADE_WORKFLOW BOT - event: ${CONSTANTS.EVENT_TRADE_CREATED} received!`);
-            console.log(`TRADE_WORKFLOW BOT - trade: `, trade.toObject());
-            console.log(`TRADE_WORKFLOW BOT - starting...`);
-            console.log("");
+            logger.info(`event: ${CONSTANTS.EVENT_TRADE_CREATED} received!`);
+            logger.info(trade.toObject());
+            logger.info(`starting...`);
             $this.start().catch((err) => {
-                console.log(`TRADE_WORKFLOW - error starting the bot: `, err);
+                logger.error(`error starting the bot`);
+                logger.error(err);
             });
         });
-        return Pr.resolve(new Date().toString());
+        return Pr.resolve(true);
     }
 
     start() {
@@ -144,7 +131,7 @@ class TradeWorkflowBot extends Bot {
 
         return TraderModuleClass.areTradesInProgress().then(areTradesInProgress => {
             if (areTradesInProgress) {
-                console.log(`TRADE_WORKFLOW BOT - found trades in progress so not stopping...`);
+                logger.warn(`found trades in progress so not stopping.`);
                 return Pr.reject("Trades in progress found!");
             }
             return super.deactivateBot();
