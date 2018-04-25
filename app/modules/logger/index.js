@@ -5,7 +5,7 @@ const appLogFormat = printf(info => {
     if (typeof info.message !== 'string') {
         info.message = JSON.stringify(info.message);
     }
-    return `${info.timestamp} [${info.label}] ${info.level}: ${info.message}`;
+    return `${info.timestamp} [${info.label}] ${info.level}: ${info.message}\n`;
 });
 
 module.exports = (moduleName) => {

@@ -90,7 +90,7 @@ class OpportunityModule {
                     return opportunities;
                 });
             }, []).then((opportunities) => {
-                logger.info(`market's one round complete. opportunities found: " + opportunities.length + " / " + ethereumMarketsArr.length`);
+                logger.info(`market's one round complete. opportunities found: ${opportunities.length} / ${ethereumMarketsArr.length}`);
                 return opportunities;
             });
         });
