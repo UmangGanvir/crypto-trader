@@ -264,7 +264,7 @@ class Trader {
                             // 1 - 0 - cancel the order on price drop
                             return $this.exchange.cancelOrder(sellTrade.sellOrderId, sellTrade.symbol).then((cancelOrderResp) => {
 
-                                return $this.exchange.createMarketSellOrder(sellOrder.symbol, sellOrder2.filled).then((marketSellOrder) => {
+                                return $this.exchange.createMarketSellOrder(sellOrder.symbol, sellOrder2.remaining).then((marketSellOrder) => {
                                     logger.warn(`price drop - market sell order placed!`);
                                     logger.info(marketSellOrder);
 
