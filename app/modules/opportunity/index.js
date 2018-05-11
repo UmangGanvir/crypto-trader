@@ -5,6 +5,7 @@ const _ = require('underscore');
 const utils = require('../../utils/index');
 const CONSTANTS = require('../../constants');
 const logger = require('../../modules/logger')(MODULE_NAME);
+const TradingUtils = require('../../utils/trading_utils');
 
 let Opportunity = require('../../models/opportunity');
 const OpportunityDataStore = require('../../data_store/mysql/opportunity').getModelClass();
@@ -35,20 +36,65 @@ class OpportunityModule {
             return Pr.resolve(Opportunity.getInvalidOpportunity());
         }
 
+        return $this._findGreatOpportunityForSymbol(symbol).then((opportunity) => {
+            if (!opportunity.isValid()) {
+                return opportunity;
+            }
+
+            // if opportunity is valid re-validate - cure for instant spike in demand
+            return $this._findGreatOpportunityForSymbol(symbol);
+        });
+    }
+
+    /*
+    * For faster emitting of opportunities, we validate the to-be-opportunity's parameters on ad-hoc basis
+    * */
+    _findGreatOpportunityForSymbol(symbol) {
+
+        const OPPORTUNITY_MIN_QUOTE_VOLUME = parseFloat(process.env.OPPORTUNITY_MIN_QUOTE_VOLUME);
+        const OPPORTUNITY_MIN_STD_DEVIATION_MEAN_PERCENTAGE = parseFloat(process.env.OPPORTUNITY_MIN_STD_DEVIATION_MEAN_PERCENTAGE);
+        const OPPORTUNITY_MAX_STD_DEVIATION_MEAN_PERCENTAGE = parseFloat(process.env.OPPORTUNITY_MAX_STD_DEVIATION_MEAN_PERCENTAGE);
+        const OPPORTUNITY_GREATNESS_RATIO = parseFloat(process.env.OPPORTUNITY_GREATNESS_RATIO);
+
+        let $this = this;
         return utils.delayPromise(
             $this.exchange.fetchTicker(symbol),
             (1000 / $this.requestRateLimitPerSecond)
         ).then((ticker) => {
+
+            if (ticker.quoteVolume < OPPORTUNITY_MIN_QUOTE_VOLUME) {
+                return Opportunity.getInvalidOpportunity();
+            }
 
             return utils.delayPromise(
                 $this.exchange.fetchOHLCV(symbol, '1m'),
                 (1000 / $this.requestRateLimitPerSecond)
             ).then((OHLCVs) => {
 
+                const standardDeviationMeanPercentage1min = TradingUtils.getStandardDeviationMeanPercentageFromOHLCVs(OHLCVs);
+                if (
+                    standardDeviationMeanPercentage1min < OPPORTUNITY_MIN_STD_DEVIATION_MEAN_PERCENTAGE ||
+                    standardDeviationMeanPercentage1min > OPPORTUNITY_MAX_STD_DEVIATION_MEAN_PERCENTAGE
+                ) {
+                    return Opportunity.getInvalidOpportunity();
+                }
+
                 return utils.delayPromise(
                     $this.exchange.fetchOrderBook(symbol),
                     (1000 / $this.requestRateLimitPerSecond)
                 ).then((orderBook) => {
+
+                    const buySellRatio = TradingUtils.getBuySellRatio(orderBook.bids, orderBook.asks);
+                    if (
+                        buySellRatio.r100 < OPPORTUNITY_GREATNESS_RATIO ||
+                        buySellRatio.r50 < OPPORTUNITY_GREATNESS_RATIO ||
+                        buySellRatio.r20 < OPPORTUNITY_GREATNESS_RATIO ||
+                        buySellRatio.r10 < OPPORTUNITY_GREATNESS_RATIO ||
+                        buySellRatio.r5 < OPPORTUNITY_GREATNESS_RATIO
+                    ) {
+                        return Opportunity.getInvalidOpportunity();
+                    }
+
                     return new Opportunity(ticker, orderBook, OHLCVs);
                 });
             });
