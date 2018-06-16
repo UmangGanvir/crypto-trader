@@ -103,7 +103,7 @@ class OpportunityModule {
 
     /*
     * Loads the market and finds opportunity for each symbol
-    * Note: currently restricted to ETH market
+    * Note: currently restricted to tether market
     * returns: array of found opportunities (which might be stale)
     * Also allows to emit opportunities for real time consumption
     * */
@@ -119,12 +119,12 @@ class OpportunityModule {
             (1000 / $this.requestRateLimitPerSecond)
         ).then((markets) => {
             let marketsArr = _.values(markets);
-            let ethereumMarketsArr = _.filter(marketsArr, (market) => {
-                return market.quoteId === "ETH";
+            let tetherMarketsArr = _.filter(marketsArr, (market) => {
+                return market.quoteId === "USDT";
             });
 
-            return Pr.reduce(ethereumMarketsArr, (opportunities, ethereumMarket) => {
-                return $this.findOpportunityForSymbol(ethereumMarket.symbol).then((opportunity) => {
+            return Pr.reduce(tetherMarketsArr, (opportunities, tetherMarket) => {
+                return $this.findOpportunityForSymbol(tetherMarket.symbol).then((opportunity) => {
                     if (opportunity.isValid()) {
                         // emit opportunity for trader
                         if (emit) {
@@ -136,7 +136,7 @@ class OpportunityModule {
                     return opportunities;
                 });
             }, []).then((opportunities) => {
-                logger.info(`market's one round complete. opportunities found: ${opportunities.length} / ${ethereumMarketsArr.length}`);
+                logger.info(`tether market's one round complete. opportunities found: ${opportunities.length} / ${tetherMarketsArr.length}`);
                 return opportunities;
             });
         });

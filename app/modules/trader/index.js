@@ -34,22 +34,25 @@ class Trader {
                 return Pr.reject("some trades are already in progress");
             }
 
-            if (opportunity.symbol === 'BNB/ETH') {
-                return Pr.reject("Trader Module does NOT support trades in BNB!");
+            if (
+                opportunity.symbol === 'BNB/USDT' ||
+                opportunity.symbol === 'TUSD/USDT'
+            ) {
+                return Pr.reject("Trader Module does NOT support trades in BNB or TUSD!");
             }
 
             return $this.exchange.fetchBalance().then((balance) => {
                 const bnbFreeBalance = balance['BNB'].free;
                 if (bnbFreeBalance < 0.5) {
                     logger.info(`BNB balance below 0.5 - buying more BNB`);
-                    return $this.exchange.createMarketBuyOrder('BNB/ETH', 1).then((marketBuyOrder) => {
+                    return $this.exchange.createMarketBuyOrder('BNB/USDT', 1).then((marketBuyOrder) => {
                         logger.info(marketBuyOrder);
                         return Pr.reject("Not placing a trade for opportunity - bought more BNB instead");
                     });
                 }
 
-                const ethFreeBalance = balance['ETH'].free;
-                const amountToBuy = ethFreeBalance / opportunity.getHighestBid();
+                const tetherFreeBalance = balance['USDT'].free;
+                const amountToBuy = tetherFreeBalance / opportunity.getHighestBid();
                 // params : { test: true }
                 return $this.exchange.createLimitBuyOrder(
                     opportunity.symbol,
