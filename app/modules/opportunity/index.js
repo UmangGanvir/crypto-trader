@@ -86,6 +86,7 @@ class OpportunityModule {
 
                     const buySellRatio = TradingUtils.getBuySellRatio(orderBook.bids, orderBook.asks);
                     if (
+                        !buySellRatio ||
                         buySellRatio.r100 < OPPORTUNITY_GREATNESS_RATIO ||
                         buySellRatio.r50 < OPPORTUNITY_GREATNESS_RATIO ||
                         buySellRatio.r20 < OPPORTUNITY_GREATNESS_RATIO ||

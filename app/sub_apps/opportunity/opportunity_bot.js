@@ -1,4 +1,4 @@
-const MODULE_NAME = "TRADE_WORKFLOW_BOT";
+const MODULE_NAME = "OPPORTUNITY_BOT";
 
 const Pr = require('bluebird');
 const CONSTANTS = require('../../constants');
