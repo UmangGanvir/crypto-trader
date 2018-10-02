@@ -6,9 +6,12 @@ const utils = require('../../utils/index');
 const CONSTANTS = require('../../constants');
 const logger = require('../../modules/logger')(MODULE_NAME);
 const TradingUtils = require('../../utils/trading_utils');
+const MarketSentiment = require('../market_sentiment');
 
 let Opportunity = require('../../models/opportunity');
 const OpportunityDataStore = require('../../data_store/mysql/opportunity').getModelClass();
+
+const QUOTE = 'USDT';
 
 class OpportunityModule {
     constructor(exchange, requestRateLimitPerSecond, emitter) {
@@ -16,6 +19,7 @@ class OpportunityModule {
         this.requestRateLimitPerSecond = requestRateLimitPerSecond;
         this.emitter = emitter;
         this._disableFindingOpportunities = false;
+        this._marketSentiment = new MarketSentiment(QUOTE);
     }
 
     /*
@@ -61,6 +65,8 @@ class OpportunityModule {
             $this.exchange.fetchTicker(symbol),
             (1000 / $this.requestRateLimitPerSecond)
         ).then((ticker) => {
+
+            this._marketSentiment.setCryptoPair24hrChangePercentage(symbol, ticker.percentage);
 
             if (ticker.quoteVolume < OPPORTUNITY_MIN_QUOTE_VOLUME) {
                 return Opportunity.getInvalidOpportunity();
@@ -121,12 +127,12 @@ class OpportunityModule {
         ).then((markets) => {
             let marketsArr = _.values(markets);
             let tetherMarketsArr = _.filter(marketsArr, (market) => {
-                return market.quoteId === "USDT";
+                return market.quoteId === QUOTE;
             });
 
             return Pr.reduce(tetherMarketsArr, (opportunities, tetherMarket) => {
                 return $this.findOpportunityForSymbol(tetherMarket.symbol).then((opportunity) => {
-                    if (opportunity.isValid()) {
+                    if (opportunity.isValid() && !$this._marketSentiment.isBearish()) {
                         // emit opportunity for trader
                         if (emit) {
                             logger.info(`emitting opportunity: ${opportunity.symbol}`);
