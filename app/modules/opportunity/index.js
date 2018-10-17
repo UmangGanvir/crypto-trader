@@ -6,7 +6,7 @@ const utils = require('../../utils/index');
 const CONSTANTS = require('../../constants');
 const logger = require('../../modules/logger')(MODULE_NAME);
 const TradingUtils = require('../../utils/trading_utils');
-const MarketSentiment = require('../market_sentiment');
+const GlobalMarketSentiment = require('../../modules/market_sentiment');
 
 let Opportunity = require('../../models/opportunity');
 const OpportunityDataStore = require('../../data_store/mysql/opportunity').getModelClass();
@@ -19,7 +19,7 @@ class OpportunityModule {
         this.requestRateLimitPerSecond = requestRateLimitPerSecond;
         this.emitter = emitter;
         this._disableFindingOpportunities = false;
-        this._marketSentiment = new MarketSentiment(QUOTE);
+        this._quoteMarketSentiment = GlobalMarketSentiment.getMarketSentimentForQuote(QUOTE);
     }
 
     /*
@@ -37,7 +37,7 @@ class OpportunityModule {
         let $this = this;
 
         if ($this._disableFindingOpportunities) {
-            return Pr.resolve(Opportunity.getInvalidOpportunity());
+            return Pr.resolve(Opportunity.getInvalidOpportunity(symbol));
         }
 
         return $this._findGreatOpportunityForSymbol(symbol).then((opportunity) => {
@@ -66,10 +66,10 @@ class OpportunityModule {
             (1000 / $this.requestRateLimitPerSecond)
         ).then((ticker) => {
 
-            this._marketSentiment.setCryptoPair24hrChangePercentage(symbol, ticker.percentage);
+            this._quoteMarketSentiment.setCryptoPair24hrChangePercentage(symbol, ticker.percentage);
 
             if (ticker.quoteVolume < OPPORTUNITY_MIN_QUOTE_VOLUME) {
-                return Opportunity.getInvalidOpportunity();
+                return Opportunity.getInvalidOpportunity(symbol);
             }
 
             return utils.delayPromise(
@@ -82,7 +82,7 @@ class OpportunityModule {
                     standardDeviationMeanPercentage1min < OPPORTUNITY_MIN_STD_DEVIATION_MEAN_PERCENTAGE ||
                     standardDeviationMeanPercentage1min > OPPORTUNITY_MAX_STD_DEVIATION_MEAN_PERCENTAGE
                 ) {
-                    return Opportunity.getInvalidOpportunity();
+                    return Opportunity.getInvalidOpportunity(symbol);
                 }
 
                 return utils.delayPromise(
@@ -99,10 +99,10 @@ class OpportunityModule {
                         buySellRatio.r10 < OPPORTUNITY_GREATNESS_RATIO ||
                         buySellRatio.r5 < OPPORTUNITY_GREATNESS_RATIO
                     ) {
-                        return Opportunity.getInvalidOpportunity();
+                        return Opportunity.getInvalidOpportunity(symbol);
                     }
 
-                    return new Opportunity(ticker, orderBook, OHLCVs);
+                    return new Opportunity(symbol, ticker, orderBook, OHLCVs);
                 });
             });
         });
@@ -118,7 +118,7 @@ class OpportunityModule {
         let $this = this;
 
         if ($this._disableFindingOpportunities) {
-            return Pr.resolve([Opportunity.getInvalidOpportunity()]);
+            return Pr.resolve([]);
         }
 
         return utils.delayPromise(
@@ -132,14 +132,12 @@ class OpportunityModule {
 
             return Pr.reduce(tetherMarketsArr, (opportunities, tetherMarket) => {
                 return $this.findOpportunityForSymbol(tetherMarket.symbol).then((opportunity) => {
-                    if (opportunity.isValid() && !$this._marketSentiment.isBearish()) {
-                        // emit opportunity for trader
-                        if (emit) {
-                            logger.info(`emitting opportunity: ${opportunity.symbol}`);
-                            $this.emitter.emit(CONSTANTS.EVENT_OPPORTUNITY_FOUND, opportunity);
-                        }
-                        opportunities.push(opportunity);
+                    // emit opportunity for trader
+                    if (emit) {
+                        // logger.info(`emitting opportunity: ${opportunity.symbol}`);
+                        $this.emitter.emit(CONSTANTS.EVENT_OPPORTUNITY_FOUND, opportunity);
                     }
+                    opportunities.push(opportunity);
                     return opportunities;
                 });
             }, []).then((opportunities) => {

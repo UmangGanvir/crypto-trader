@@ -1,13 +1,13 @@
 const TradingUtils = require('../utils/trading_utils');
 
 class Opportunity {
-    constructor(ticker, orderBook, OHCLVs) {
+    constructor(symbol, ticker, orderBook, OHCLVs) {
         // private members
         this._bids = orderBook.bids;
         this._asks = orderBook.asks;
         this._OHLCVs = OHCLVs;
 
-        this.symbol = ticker.symbol;
+        this.symbol = symbol;
         this.price = ticker.last;
         this.quoteVolume = ticker.quoteVolume;
         this.standardDeviationMeanPercentage1min = TradingUtils.getStandardDeviationMeanPercentageFromOHLCVs(this._OHLCVs);
@@ -90,8 +90,8 @@ class Opportunity {
         return undefined
     }
 
-    static getInvalidOpportunity() {
-        return new Opportunity({}, {bids: []});
+    static getInvalidOpportunity(symbol) {
+        return new Opportunity(symbol, {}, {bids: []});
     }
 }
 
